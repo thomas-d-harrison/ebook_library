@@ -9,11 +9,11 @@
 
 **Python 3.8+** is required. Don't have Python? 
 
-[![Download Python](https://img.shields.io/badge/Download-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![](https://img.shields.io/badge/Download-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
 **eBook files** are required. Need files?
 
-[![Download Here](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white&logoSize=auto)](https://drive.google.com/file/d/1QWVho6HJ2GJiDLe13RqqBcv1zJX2V4VC/view?usp=sharing) 
+[![](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white&logoSize=auto)](https://drive.google.com/file/d/1QWVho6HJ2GJiDLe13RqqBcv1zJX2V4VC/view?usp=sharing) 
 
 ## 📁 Project Structure
 ```
