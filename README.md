@@ -39,7 +39,7 @@ Library/
 py -m pip install flask
 
 # Run the cataloger
-python ebook_cataloger.py
+python ebook_processor.py
 
 # Start web server
 python library_web_server.py
@@ -47,7 +47,7 @@ python library_web_server.py
 
 ## 💡 Usage
 
-### Catalog Your Books
+### Process Your Books
 ```bash
 python ebook_processor.py
 ```
@@ -61,8 +61,8 @@ Open `http://localhost:5000`
 ### View Cover Wall
 ```bash
 python cover_wall_view.py
-``
-Open `http://localhost:5000``
+```
+Open `http://localhost:5000`
 
 ## 🛠️ Tech Stack
 
