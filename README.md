@@ -1,9 +1,10 @@
 # 📚 ebook library system
-> A powerful Python-based ebook processing system with web interface
+> A Python-based eBook processing system with web interface
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)
 ![SQLite](https://img.shields.io/badge/sqlite-3-yellow.svg)
+
 
 ## 🐍 Prerequisites
 
