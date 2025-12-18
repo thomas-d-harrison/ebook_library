@@ -31,12 +31,12 @@
 ```
 Library/
 ├── 📂 infra/                  # Database files and processors (eBook + StoryGraph)
-│   ├── eBook_processor.py      # Builds DB + ingests eBook metadata
-│   ├── storygraph_processor.py  # Imports StoryGraph CSV reading history
-│   └── storygraph_data.csv       # File exported from reading history tracking
-├── 📂 utils/                    # Utility scripts (dedupe folders, series viewer, SQL helpers)
-├── 📂 debug/                   # Debugging / exploration scripts
-└── 📂 lib/                    # eBook files (extract or place your library root here)
+│   ├── ebook_processor.py       # Builds DB + ingests eBook metadata
+│   ├── storygraph_processor.py   # Ingests reading history data
+│   └── storygraph_data.csv        # File exported from reading history tracking
+├── 📂 utils/                     # Utility scripts (dedupe folders, series viewer, SQL helpers)
+├── 📂 debug/                    # Debugging / exploration scripts
+└── 📂 lib/                     # eBook files (extract or place your library root here)
 ```
 
 ---
@@ -48,7 +48,7 @@ Library/
 py -m pip install flask
 
 # Build eBook catalog database
-python eBook_processor.py
+python ebook_processor.py
 
 # (Optional) Import StoryGraph reading history
 python storygraph_processor.py
@@ -72,7 +72,7 @@ Builds the core eBook catalog (books, authors, series, metadata).
 3. Run:
 
 ```bash
-python eBook_processor.py
+python ebook_processor.py
 ```
 Data is stored in:
 
@@ -84,7 +84,7 @@ Data is stored in:
 - `authors`
 - `book_authors`
 
-### 2️⃣ Import StoryGraph Reading History
+### 2️⃣ Import Reading History
 
 Imports your reading history and links it to existing books in the library.
 
@@ -125,7 +125,7 @@ Open: `http://localhost:5000`
 
 ## 🧠 Data Model Notes
 
-- Ebook metadata is treated as the **source of truth** for books and authors
+- eBook metadata is treated as the **source of truth** for books and authors
 - StoryGraph data is imported as **reading history**, not book definitions
 - Reading history optionally links to existing books via title/author matching
 - If no match is found, reading history is still preserved
@@ -136,7 +136,7 @@ Open: `http://localhost:5000`
 
 - **Backend:** Python, Flask, SQLite
 - **Frontend:** HTML, CSS, JavaScript
-- **Metadata:** OPF/XML parsing, CSV ingestion
+- **Metadata:** OPF/XML, CSV
 
 ---
 
