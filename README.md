@@ -25,6 +25,7 @@
 - 🎨 **Cover Wall** - Beautiful visual grid of all your book covers
 - 🌐 **Web Interface** - Access your library from any device
 - ⬇️ **Downloads** - Direct download to any device
+```
 
 ## 📁 Project Structure
 ```
@@ -33,6 +34,7 @@ Library/
 ├── 📂 utils/        # Utility scripts - Functionality includes deletion of deuplicate folders, book series viewer, and SQL queries.
 ├── 📂 debug/        # Debugging scripts - Any code to debug, test, troubleshoot, and explore this ebook library system.
 └── 📂 tt lib/       # eBook files - Where to extract tt lib root or place your root.
+```
 
 ## 🚀 Quick Start
 ```bash
