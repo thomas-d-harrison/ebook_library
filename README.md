@@ -110,6 +110,7 @@ python library_web_server.py
 ```
 
 Open: `http://localhost:5000`
+> `http://YOUR_LOCAL_IP:5000` for others on same WiFi
 
 ### 4️⃣ View Cover Wall
 
@@ -118,6 +119,7 @@ python cover_wall_view.py
 ```
 
 Open: `http://localhost:5000`
+> `http://YOUR_LOCAL_IP:5000` for others on same WiFi
 
 ---
 
