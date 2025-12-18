@@ -30,13 +30,19 @@
 
 ```
 Library/
-├── 📂 infra/                  # Database files and processors (eBook + StoryGraph)
+├── 📂 infra/                  # Database files and processors
 │   ├── ebook_processor.py       # Builds DB + ingests eBook metadata
 │   ├── storygraph_processor.py   # Ingests reading history data
-│   └── storygraph_data.csv        # File exported from reading history tracking
-├── 📂 utils/                     # Utility scripts (dedupe folders, series viewer, SQL helpers)
-├── 📂 debug/                    # Debugging / exploration scripts
-└── 📂 lib/                     # eBook files (extract or place your library root here)
+│   ├── library_web_server.py      # Starts the eLibrary webpage
+│   └── storygraph_data.csv         # File exported from reading history tracking
+├── 📂 utils/                       # Utility scripts (dedupe folders, cover art grid, etc.)
+│   ├── series_viewer.py            # Gets series data for viewing and for webpage to use
+│   └── *_queries.sql              # Insightful queries
+├── 📂 debug/                     # Debugging / exploration scripts
+└── 📂 lib/                      # eBook files (extract or place your library root here)
+    ├─ 📂 Author/
+       └─ 📂 Book Title/
+          └─ book.*
 ```
 
 ---
