@@ -1,4 +1,4 @@
-# 📚 ebook library system
+# 📚 eBook library system
 > A Python-based eBook processing system with web interface
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
@@ -86,12 +86,12 @@ Data is stored in:
 
 ### 2️⃣ Import StoryGraph Reading History
 
-Imports your Reading History CSV export and links it to existing books when possible.
+Imports your reading history and links it to existing books in the library.
 
 **Steps:**
 
 1. Export your data (.csv) from a reading tracking app (e.g. StoryGraph)
-2. Place the .csv file in `infra`
+2. Place the .csv file in `infra` directory
 3. Run:
 
 ```bash
