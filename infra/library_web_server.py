@@ -1,10 +1,12 @@
 from flask import Flask, render_template_string, jsonify, send_file
 import sqlite3
 import os
+from pathlib import Path
 
 app = Flask(__name__)
 
-DB_PATH = 'tt_db_ebook_lib.db'
+# Database is in ../infra/tt_db_ebook_lib.db
+DB_PATH = Path(__file__).parent / '..' / 'infra' / 'tt_db_ebook_lib.db'
 
 # HTML template
 HTML_TEMPLATE = '''
@@ -13,7 +15,7 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Library Catalog</title>
+    <title>TT's eLibrary</title>
     <style>
         * {
             margin: 0;
@@ -22,7 +24,7 @@ HTML_TEMPLATE = '''
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a4d2e 0%, #2d5f3f 50%, #4a7c59 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -31,40 +33,52 @@ HTML_TEMPLATE = '''
             margin: 0 auto;
         }
         header {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             margin-bottom: 30px;
             text-align: center;
         }
         h1 {
-            color: #667eea;
+            color: #1a4d2e;
             font-size: 2.5em;
             margin-bottom: 10px;
         }
         .subtitle {
-            color: #666;
+            color: #4a7c59;
             font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        .total-books-banner {
+            background: linear-gradient(135deg, #2d5f3f 0%, #4a7c59 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .search-bar {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             margin-bottom: 30px;
         }
         .search-input {
             width: 100%;
             padding: 15px;
             font-size: 1.1em;
-            border: 2px solid #ddd;
+            border: 2px solid #4a7c59;
             border-radius: 10px;
             transition: border 0.3s;
         }
         .search-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #2d5f3f;
+            box-shadow: 0 0 10px rgba(45, 95, 63, 0.3);
         }
         .filters {
             display: flex;
@@ -74,16 +88,16 @@ HTML_TEMPLATE = '''
         }
         .filter-btn {
             padding: 8px 16px;
-            border: 2px solid #667eea;
+            border: 2px solid #4a7c59;
             background: white;
-            color: #667eea;
+            color: #2d5f3f;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9em;
         }
         .filter-btn:hover, .filter-btn.active {
-            background: #667eea;
+            background: #4a7c59;
             color: white;
         }
         .stats {
@@ -93,19 +107,26 @@ HTML_TEMPLATE = '''
             margin-bottom: 30px;
         }
         .stat-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            background: rgba(74, 124, 89, 0.1);
         }
         .stat-number {
             font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            color: #2d5f3f;
         }
         .stat-label {
-            color: #666;
+            color: #4a7c59;
             margin-top: 5px;
         }
         .books-grid {
@@ -114,35 +135,62 @@ HTML_TEMPLATE = '''
             gap: 20px;
         }
         .book-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             transition: transform 0.3s, box-shadow 0.3s;
             cursor: pointer;
+            display: flex;
+            gap: 15px;
         }
         .book-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .book-card-cover {
+            flex-shrink: 0;
+            width: 80px;
+            height: 120px;
+            border-radius: 5px;
+            object-fit: cover;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        .book-card-cover-placeholder {
+            flex-shrink: 0;
+            width: 80px;
+            height: 120px;
+            background: linear-gradient(135deg, #2d5f3f 0%, #4a7c59 100%);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        .book-card-info {
+            flex: 1;
+            min-width: 0;
         }
         .book-title {
             font-size: 1.3em;
             font-weight: bold;
-            color: #333;
+            color: #1a4d2e;
             margin-bottom: 10px;
         }
         .book-author {
-            color: #667eea;
+            color: #4a7c59;
             font-size: 1.1em;
             margin-bottom: 10px;
         }
         .book-series {
-            background: #f0f0f0;
+            background: #e8f5e9;
             padding: 5px 10px;
             border-radius: 5px;
             display: inline-block;
             font-size: 0.9em;
-            color: #666;
+            color: #2d5f3f;
             margin-bottom: 10px;
         }
         .book-subjects {
@@ -152,7 +200,7 @@ HTML_TEMPLATE = '''
             margin-top: 10px;
         }
         .subject-tag {
-            background: #667eea;
+            background: #4a7c59;
             color: white;
             padding: 3px 10px;
             border-radius: 15px;
@@ -161,9 +209,9 @@ HTML_TEMPLATE = '''
         .no-results {
             text-align: center;
             padding: 50px;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
-            color: #666;
+            color: #4a7c59;
             font-size: 1.2em;
         }
         .loading {
@@ -213,7 +261,7 @@ HTML_TEMPLATE = '''
         }
         .modal-header {
             padding: 30px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid #e8f5e9;
             display: flex;
             justify-content: space-between;
             align-items: start;
@@ -227,7 +275,7 @@ HTML_TEMPLATE = '''
             line-height: 1;
         }
         .close-btn:hover {
-            color: #333;
+            color: #2d5f3f;
         }
         .modal-body {
             padding: 30px;
@@ -246,7 +294,7 @@ HTML_TEMPLATE = '''
         .book-cover-placeholder {
             width: 100%;
             height: 300px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d5f3f 0%, #4a7c59 100%);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -255,12 +303,12 @@ HTML_TEMPLATE = '''
             font-size: 3em;
         }
         .book-info h2 {
-            color: #333;
+            color: #1a4d2e;
             font-size: 2em;
             margin-bottom: 10px;
         }
         .book-info .author {
-            color: #667eea;
+            color: #4a7c59;
             font-size: 1.3em;
             margin-bottom: 15px;
         }
@@ -269,7 +317,7 @@ HTML_TEMPLATE = '''
         }
         .info-label {
             font-weight: bold;
-            color: #666;
+            color: #2d5f3f;
             margin-bottom: 5px;
         }
         .info-value {
@@ -283,12 +331,12 @@ HTML_TEMPLATE = '''
         .download-section {
             margin-top: 30px;
             padding-top: 30px;
-            border-top: 2px solid #f0f0f0;
+            border-top: 2px solid #e8f5e9;
         }
         .download-btn {
             display: inline-block;
             padding: 12px 30px;
-            background: #667eea;
+            background: #4a7c59;
             color: white;
             text-decoration: none;
             border-radius: 10px;
@@ -300,16 +348,65 @@ HTML_TEMPLATE = '''
             font-size: 1em;
         }
         .download-btn:hover {
-            background: #5568d3;
+            background: #2d5f3f;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(45, 95, 63, 0.4);
         }
         .format-badge {
-            background: #f0f0f0;
+            background: #e8f5e9;
             padding: 3px 8px;
             border-radius: 5px;
             font-size: 0.8em;
             margin-left: 5px;
+            color: #2d5f3f;
+        }
+        
+        /* List view styles */
+        .list-view {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .list-view h2 {
+            color: #1a4d2e;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .list-item {
+            padding: 15px;
+            border-bottom: 1px solid #e8f5e9;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .list-item:hover {
+            background: #e8f5e9;
+        }
+        .list-item:last-child {
+            border-bottom: none;
+        }
+        .list-item-name {
+            font-size: 1.2em;
+            color: #2d5f3f;
+            font-weight: bold;
+        }
+        .list-item-count {
+            color: #4a7c59;
+            font-size: 0.9em;
+        }
+        .back-btn {
+            padding: 10px 20px;
+            background: #4a7c59;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #2d5f3f;
         }
         
         @media (max-width: 768px) {
@@ -323,32 +420,46 @@ HTML_TEMPLATE = '''
     <div class="container">
         <header>
             <h1>📚 TT's eLibrary</h1>
-            <p class="subtitle">Browse and download the eBook collection</p>
+            <p class="subtitle">Browse and download our ebook collection</p>
+            <div class="total-books-banner" id="totalBooksBanner">
+                Loading...
+            </div>
         </header>
-        <div class="search-bar">
-            <input type="text" class="search-input" id="searchInput" placeholder="Search by title, author, or subject...">
-            <div class="filters">
-                <button class="filter-btn active" data-filter="all">All Books</button>
-                <button class="filter-btn" data-filter="series">In Series</button>
-                <button class="filter-btn" data-filter="standalone">Standalone</button>
+        
+        <div id="mainView">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by title, author, subject, or series...">
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">All Books</button>
+                    <button class="filter-btn" data-filter="series">In Series</button>
+                    <button class="filter-btn" data-filter="standalone">Standalone</button>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="stat-card" onclick="showAuthors()">
+                    <div class="stat-number" id="totalAuthors">0</div>
+                    <div class="stat-label">Authors</div>
+                </div>
+                <div class="stat-card" onclick="showSeries()">
+                    <div class="stat-number" id="totalSeries">0</div>
+                    <div class="stat-label">Series</div>
+                </div>
+                <div class="stat-card" onclick="showSubjects()">
+                    <div class="stat-number" id="totalSubjects">0</div>
+                    <div class="stat-label">Subjects</div>
+                </div>
+            </div>
+            <div id="booksContainer">
+                <div class="loading">Loading library...</div>
             </div>
         </div>
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="totalBooks">0</div>
-                <div class="stat-label">Total Books</div>
+        
+        <div id="listView" style="display: none;">
+            <div class="list-view">
+                <button class="back-btn" onclick="showMainView()">← Back to Library</button>
+                <h2 id="listTitle"></h2>
+                <div id="listContainer"></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalAuthors">0</div>
-                <div class="stat-label">Authors</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalSeries">0</div>
-                <div class="stat-label">Series</div>
-            </div>
-        </div>
-        <div id="booksContainer">
-            <div class="loading">Loading library...</div>
         </div>
     </div>
     
@@ -368,6 +479,9 @@ HTML_TEMPLATE = '''
     <script>
         let allBooks = [];
         let currentFilter = 'all';
+        let allAuthors = [];
+        let allSeries = [];
+        let allSubjects = [];
 
         async function loadBooks() {
             try {
@@ -391,14 +505,20 @@ HTML_TEMPLATE = '''
             container.innerHTML = '<div class="books-grid">' + 
                 books.map(book => `
                     <div class="book-card" onclick="showBookDetails(${book.id})">
-                        <div class="book-title">${book.title}</div>
-                        <div class="book-author">by ${book.authors}</div>
-                        ${book.series ? `<div class="book-series">${book.series}</div>` : ''}
-                        ${book.subjects.length > 0 ? `
-                            <div class="book-subjects">
-                                ${book.subjects.map(s => `<span class="subject-tag">${s}</span>`).join('')}
-                            </div>
-                        ` : ''}
+                        ${book.has_cover ? 
+                            `<img src="/api/cover/${book.id}" class="book-card-cover" alt="${book.title} cover">` :
+                            `<div class="book-card-cover-placeholder">📚</div>`
+                        }
+                        <div class="book-card-info">
+                            <div class="book-title">${book.title}</div>
+                            <div class="book-author">by ${book.authors}</div>
+                            ${book.series ? `<div class="book-series">${book.series}</div>` : ''}
+                            ${book.subjects.length > 0 ? `
+                                <div class="book-subjects">
+                                    ${book.subjects.map(s => `<span class="subject-tag">${s}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `).join('') + 
                 '</div>';
@@ -489,7 +609,6 @@ HTML_TEMPLATE = '''
             document.getElementById('bookModal').classList.remove('active');
         }
 
-        // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('bookModal');
             if (event.target === modal) {
@@ -509,16 +628,107 @@ HTML_TEMPLATE = '''
                 filtered = filtered.filter(book => 
                     book.title.toLowerCase().includes(term) ||
                     book.authors.toLowerCase().includes(term) ||
-                    book.subjects.some(s => s.toLowerCase().includes(term))
+                    book.subjects.some(s => s.toLowerCase().includes(term)) ||
+                    (book.series && book.series.toLowerCase().includes(term))
                 );
             }
             displayBooks(filtered);
         }
 
         function updateStats(stats) {
-            document.getElementById('totalBooks').textContent = stats.total_books;
+            document.getElementById('totalBooksBanner').textContent = 
+                `📚 ${stats.total_books} Books in Collection`;
             document.getElementById('totalAuthors').textContent = stats.total_authors;
             document.getElementById('totalSeries').textContent = stats.total_series;
+            document.getElementById('totalSubjects').textContent = stats.total_subjects;
+        }
+
+        async function showAuthors() {
+            try {
+                const response = await fetch('/api/authors');
+                allAuthors = await response.json();
+                
+                document.getElementById('mainView').style.display = 'none';
+                document.getElementById('listView').style.display = 'block';
+                document.getElementById('listTitle').textContent = 'All Authors';
+                
+                const container = document.getElementById('listContainer');
+                container.innerHTML = allAuthors.map(author => `
+                    <div class="list-item" onclick="filterByAuthor('${author.name.replace(/'/g, "\\'")}')">
+                        <div class="list-item-name">${author.name}</div>
+                        <div class="list-item-count">${author.book_count} book${author.book_count !== 1 ? 's' : ''}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading authors:', error);
+            }
+        }
+
+        async function showSeries() {
+            try {
+                const response = await fetch('/api/series');
+                allSeries = await response.json();
+                
+                document.getElementById('mainView').style.display = 'none';
+                document.getElementById('listView').style.display = 'block';
+                document.getElementById('listTitle').textContent = 'All Series';
+                
+                const container = document.getElementById('listContainer');
+                container.innerHTML = allSeries.map(series => `
+                    <div class="list-item" onclick="filterBySeries('${series.name.replace(/'/g, "\\'")}')">
+                        <div class="list-item-name">${series.name}</div>
+                        <div class="list-item-count">${series.book_count} book${series.book_count !== 1 ? 's' : ''}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading series:', error);
+            }
+        }
+
+        async function showSubjects() {
+            try {
+                const response = await fetch('/api/subjects');
+                allSubjects = await response.json();
+                
+                document.getElementById('mainView').style.display = 'none';
+                document.getElementById('listView').style.display = 'block';
+                document.getElementById('listTitle').textContent = 'All Subjects';
+                
+                const container = document.getElementById('listContainer');
+                container.innerHTML = allSubjects.map(subject => `
+                    <div class="list-item" onclick="filterBySubject('${subject.name.replace(/'/g, "\\'")}')">
+                        <div class="list-item-name">${subject.name}</div>
+                        <div class="list-item-count">${subject.book_count} book${subject.book_count !== 1 ? 's' : ''}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+            }
+        }
+
+        function showMainView() {
+            document.getElementById('listView').style.display = 'none';
+            document.getElementById('mainView').style.display = 'block';
+            document.getElementById('searchInput').value = '';
+            filterBooks('', 'all');
+        }
+
+        function filterByAuthor(authorName) {
+            showMainView();
+            document.getElementById('searchInput').value = authorName;
+            filterBooks(authorName, currentFilter);
+        }
+
+        function filterBySeries(seriesName) {
+            showMainView();
+            document.getElementById('searchInput').value = seriesName;
+            filterBooks(seriesName, currentFilter);
+        }
+
+        function filterBySubject(subjectName) {
+            showMainView();
+            document.getElementById('searchInput').value = subjectName;
+            filterBooks(subjectName, currentFilter);
         }
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -542,14 +752,14 @@ HTML_TEMPLATE = '''
 
 def get_all_books():
     """Get all books with their details from the database"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
-    cursor.execute('SELECT id, title FROM books ORDER BY title')
+    cursor.execute('SELECT id, title, cover_path FROM books ORDER BY title')
     books = cursor.fetchall()
     
     result = []
-    for book_id, title in books:
+    for book_id, title, cover_path in books:
         cursor.execute('''
             SELECT a.author_name 
             FROM authors a
@@ -576,12 +786,15 @@ def get_all_books():
         ''', (book_id,))
         subjects = [row[0] for row in cursor.fetchall()]
         
+        has_cover = cover_path is not None and os.path.exists(cover_path)
+        
         result.append({
             'id': book_id,
             'title': title,
             'authors': ', '.join(authors) if authors else 'Unknown',
             'series': series,
-            'subjects': subjects
+            'subjects': subjects,
+            'has_cover': has_cover
         })
     
     conn.close()
@@ -589,7 +802,7 @@ def get_all_books():
 
 def get_book_details(book_id):
     """Get detailed information about a specific book"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
     cursor.execute('SELECT * FROM books WHERE id = ?', (book_id,))
@@ -599,7 +812,6 @@ def get_book_details(book_id):
         conn.close()
         return None
     
-    # Get authors
     cursor.execute('''
         SELECT a.author_name 
         FROM authors a
@@ -608,7 +820,6 @@ def get_book_details(book_id):
     ''', (book_id,))
     authors = [row[0] for row in cursor.fetchall()]
     
-    # Get series
     cursor.execute('''
         SELECT ser.series_name, bser.series_index
         FROM series ser
@@ -618,7 +829,6 @@ def get_book_details(book_id):
     series_result = cursor.fetchone()
     series = f"{series_result[0]} #{series_result[1]}" if series_result else None
     
-    # Get subjects
     cursor.execute('''
         SELECT s.subject_name 
         FROM subjects s
@@ -627,7 +837,6 @@ def get_book_details(book_id):
     ''', (book_id,))
     subjects = [row[0] for row in cursor.fetchall()]
     
-    # Get files
     cursor.execute('SELECT id, file_path, file_format FROM book_files WHERE book_id = ?', (book_id,))
     files = [{'id': row[0], 'path': row[1], 'format': row[2].replace('.', '')} for row in cursor.fetchall()]
     
@@ -649,7 +858,7 @@ def get_book_details(book_id):
 
 def get_stats():
     """Get library statistics"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
     cursor.execute('SELECT COUNT(*) FROM books')
@@ -661,13 +870,68 @@ def get_stats():
     cursor.execute('SELECT COUNT(*) FROM series')
     total_series = cursor.fetchone()[0]
     
+    cursor.execute('SELECT COUNT(*) FROM subjects')
+    total_subjects = cursor.fetchone()[0]
+    
     conn.close()
     
     return {
         'total_books': total_books,
         'total_authors': total_authors,
-        'total_series': total_series
+        'total_series': total_series,
+        'total_subjects': total_subjects
     }
+
+def get_all_authors_with_counts():
+    """Get all authors with book counts"""
+    conn = sqlite3.connect(str(DB_PATH))
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT a.author_name, COUNT(DISTINCT ba.book_id) as book_count
+        FROM authors a
+        JOIN book_authors ba ON a.id = ba.author_id
+        GROUP BY a.author_name
+        ORDER BY a.author_name
+    ''')
+    
+    result = [{'name': row[0], 'book_count': row[1]} for row in cursor.fetchall()]
+    conn.close()
+    return result
+
+def get_all_series_with_counts():
+    """Get all series with book counts"""
+    conn = sqlite3.connect(str(DB_PATH))
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT s.series_name, COUNT(DISTINCT bs.book_id) as book_count
+        FROM series s
+        JOIN book_series bs ON s.id = bs.series_id
+        GROUP BY s.series_name
+        ORDER BY s.series_name
+    ''')
+    
+    result = [{'name': row[0], 'book_count': row[1]} for row in cursor.fetchall()]
+    conn.close()
+    return result
+
+def get_all_subjects_with_counts():
+    """Get all subjects with book counts"""
+    conn = sqlite3.connect(str(DB_PATH))
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT s.subject_name, COUNT(DISTINCT bs.book_id) as book_count
+        FROM subjects s
+        JOIN book_subjects bs ON s.id = bs.subject_id
+        GROUP BY s.subject_name
+        ORDER BY s.subject_name
+    ''')
+    
+    result = [{'name': row[0], 'book_count': row[1]} for row in cursor.fetchall()]
+    conn.close()
+    return result
 
 @app.route('/')
 def index():
@@ -682,6 +946,21 @@ def api_books():
         'stats': stats
     })
 
+@app.route('/api/authors')
+def api_authors():
+    authors = get_all_authors_with_counts()
+    return jsonify(authors)
+
+@app.route('/api/series')
+def api_series():
+    series = get_all_series_with_counts()
+    return jsonify(series)
+
+@app.route('/api/subjects')
+def api_subjects():
+    subjects = get_all_subjects_with_counts()
+    return jsonify(subjects)
+
 @app.route('/api/book/<int:book_id>')
 def api_book_details(book_id):
     book = get_book_details(book_id)
@@ -691,7 +970,7 @@ def api_book_details(book_id):
 
 @app.route('/api/cover/<int:book_id>')
 def api_cover(book_id):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     cursor.execute('SELECT cover_path FROM books WHERE id = ?', (book_id,))
     result = cursor.fetchone()
@@ -703,7 +982,7 @@ def api_cover(book_id):
 
 @app.route('/api/download/<int:file_id>')
 def api_download(file_id):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     cursor.execute('SELECT file_path FROM book_files WHERE id = ?', (file_id,))
     result = cursor.fetchone()
@@ -714,12 +993,12 @@ def api_download(file_id):
     return jsonify({'error': 'File not found'}), 404
 
 if __name__ == '__main__':
-    if not os.path.exists(DB_PATH):
-        print(f"Error: Database file '{DB_PATH}' not found!")
-        print("Make sure ebook_library.db is in the same folder as this script.")
+    if not DB_PATH.exists():
+        print(f"Error: Database file not found: {DB_PATH}")
+        print("Make sure tt_db_ebook_lib.db is in the ../infra/ folder.")
     else:
         print("="*60)
-        print("Family Library Web Catalog")
+        print("TT's eLibrary")
         print("="*60)
         print("\nStarting server...")
         print("\nOpen your browser and go to:")
