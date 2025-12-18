@@ -14,9 +14,8 @@
 
 **eBook files** are required. Need files?
 
-[![](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white&logoSize=auto)](https://drive.google.com/file/d/1QWVho6HJ2GJiDLe13RqqBcv1zJX2V4VC/view?usp=sharing) 
+[![](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white&logoSize=auto)](https://drive.google.com/drive/folders/1aGTJdt27fEIrZqBuJBEksnyos8ODXsxp?usp=sharing) 
 
-```
 ## ✨ Features
 
 - 📖 **Catalog Management** - Organize your entire ebook collection
@@ -27,19 +26,17 @@
 - ⬇️ **Downloads** - Direct download to any device
 - 📈 **Reading History (StoryGraph)** - Import reading progress, ratings, and reviews
 
----
-
 ## 📁 Project Structure
 
 ```
 Library/
-├── 📂 infra/        # Database files and processors (ebook + StoryGraph)
-│   ├── ebook_processor.py           # Builds DB + ingests ebook metadata
-│   └── storygraph_processor.py      # Imports StoryGraph CSV reading history
-├── 📂 utils/        # Utility scripts (dedupe folders, series viewer, SQL helpers)
-├── 📂 debug/        # Debugging / exploration scripts
-├── 📂 tt lib/       # eBook files (extract or place your library root here)
-└── 📂 data/         # CSV exports (StoryGraph)
+├── 📂 infra/                    # Database files and processors (ebook + StoryGraph)
+│   ├── ebook_processor.py        # Builds DB + ingests ebook metadata
+│   ├── storygraph_processor.py   # Imports StoryGraph CSV reading history
+│   └── storygraph_data.csv       # File exported from reading history tracking
+├── 📂 utils/                    # Utility scripts (dedupe folders, series viewer, SQL helpers)
+├── 📂 debug/                    # Debugging / exploration scripts
+└── 📂 lib/                     # eBook files (extract or place your library root here)
 ```
 
 ---
@@ -85,17 +82,6 @@ Imports your StoryGraph CSV export and links it to existing books when possible.
 ```bash
 python storygraph_processor.py
 ```
-
-**What gets imported:**
-
-- Reading status (Read / Currently Reading / To Read)
-- Dates read
-- Read counts
-- Star ratings
-- Reviews
-- Moods & reading attributes
-- Content warnings
-
 Data is stored in:
 
 - `reading_history`
