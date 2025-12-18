@@ -322,8 +322,8 @@ HTML_TEMPLATE = '''
 <body>
     <div class="container">
         <header>
-            <h1>📚 Family Library Catalog</h1>
-            <p class="subtitle">Browse and download our ebook collection</p>
+            <h1>📚 TT's eLibrary</h1>
+            <p class="subtitle">Browse and download the eBook collection</p>
         </header>
         <div class="search-bar">
             <input type="text" class="search-input" id="searchInput" placeholder="Search by title, author, or subject...">
