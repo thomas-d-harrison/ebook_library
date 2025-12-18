@@ -23,8 +23,8 @@
 - 📊 **Series Tracking** - Keep track of book series and reading order
 - 🎨 **Cover Wall** - Beautiful visual grid of all your book covers
 - 🌐 **Web Interface** - Access your library from any device
-- ⬇️ **Downloads** - Direct download to any device
-- 📈 **Reading History** - Import reading progress, ratings, and reviews
+- ⬇️ **Downloads** - Directly download to any device
+- 📈 **Reading History** - Import reading activity and reviews
 
 ## 📁 Project Structure
 
