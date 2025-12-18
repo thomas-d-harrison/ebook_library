@@ -18,7 +18,7 @@
 
 ## ✨ Features
 
-- 📖 **Catalog Management** - Organize your entire ebook collection
+- 📖 **Catalog Management** - Organize your entire eBook collection
 - 🔍 **Smart Search** - Find books by title, author, or genre
 - 📊 **Series Tracking** - Keep track of book series and reading order
 - 🎨 **Cover Wall** - Beautiful visual grid of all your book covers
@@ -30,8 +30,8 @@
 
 ```
 Library/
-├── 📂 infra/                  # Database files and processors (ebook + StoryGraph)
-│   ├── ebook_processor.py      # Builds DB + ingests ebook metadata
+├── 📂 infra/                  # Database files and processors (eBook + StoryGraph)
+│   ├── eBook_processor.py      # Builds DB + ingests eBook metadata
 │   ├── storygraph_processor.py  # Imports StoryGraph CSV reading history
 │   └── storygraph_data.csv       # File exported from reading history tracking
 ├── 📂 utils/                    # Utility scripts (dedupe folders, series viewer, SQL helpers)
@@ -47,8 +47,8 @@ Library/
 # Install dependencies
 py -m pip install flask
 
-# Build ebook catalog database
-python ebook_processor.py
+# Build eBook catalog database
+python eBook_processor.py
 
 # (Optional) Import StoryGraph reading history
 python storygraph_processor.py
@@ -63,7 +63,7 @@ python library_web_server.py
 
 ### 1️⃣ Process Your Books
 
-Builds the core ebook catalog (books, authors, series, metadata).
+Builds the core eBook catalog (books, authors, series, metadata).
 
 **Steps:**
 
@@ -72,7 +72,7 @@ Builds the core ebook catalog (books, authors, series, metadata).
 3. Run:
 
 ```bash
-python ebook_processor.py
+python eBook_processor.py
 ```
 Data is stored in:
 
