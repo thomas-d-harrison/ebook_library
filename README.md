@@ -16,13 +16,6 @@
 
 [![](https://img.shields.io/badge/Google_Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white&logoSize=auto)](https://drive.google.com/file/d/1QWVho6HJ2GJiDLe13RqqBcv1zJX2V4VC/view?usp=sharing) 
 
-## 📁 Project Structure
-```
-Library/
-├── 📂 infra/        # Database files - Home to ebook_processor.py, the code to build infrastructure and ingest ebook data into a new db.
-├── 📂 utils/        # Utility scripts - Functionality includes deletion of deuplicate folders, book series viewer, and SQL queries.
-├── 📂 debug/        # Debugging scripts - Any code to debug, test, troubleshoot, and explore this ebook library system.
-└── 📂 tt lib/       # eBook files - Where to extract tt lib root or place your root.
 ```
 ## ✨ Features
 
@@ -33,6 +26,13 @@ Library/
 - 🌐 **Web Interface** - Access your library from any device
 - ⬇️ **Downloads** - Direct download to any device
 
+## 📁 Project Structure
+```
+Library/
+├── 📂 infra/        # Database files - Home to ebook_processor.py, the code to build infrastructure and ingest ebook data into a new db.
+├── 📂 utils/        # Utility scripts - Functionality includes deletion of deuplicate folders, book series viewer, and SQL queries.
+├── 📂 debug/        # Debugging scripts - Any code to debug, test, troubleshoot, and explore this ebook library system.
+└── 📂 tt lib/       # eBook files - Where to extract tt lib root or place your root.
 
 ## 🚀 Quick Start
 ```bash
