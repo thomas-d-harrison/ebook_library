@@ -9,11 +9,11 @@ SELECT
     b.isbn,
     b.publisher,
     b.publish_date,
-    GROUP_CONCAT(a.author_name, ', ') as authors
+    GROUP_CONCAT(a.author_name) as authors
 FROM books b
 LEFT JOIN book_authors ba ON b.id = ba.book_id
 LEFT JOIN authors a ON ba.author_id = a.id
-WHERE b.id = 1
+--WHERE b.id = 1
 GROUP BY b.id;
 
 -- Get a book with all its subjects
@@ -36,9 +36,9 @@ SELECT
     b.publish_date,
     b.language,
     b.description,
-    GROUP_CONCAT(DISTINCT a.author_name, ', ') as authors,
-    GROUP_CONCAT(DISTINCT s.subject_name, ', ') as subjects,
-    GROUP_CONCAT(DISTINCT bf.file_format, ', ') as available_formats,
+    GROUP_CONCAT(DISTINCT a.author_name) as authors,
+    GROUP_CONCAT(DISTINCT s.subject_name) as subjects,
+    GROUP_CONCAT(DISTINCT bf.file_format) as available_formats,
     COUNT(DISTINCT bf.id) as format_count
 FROM books b
 LEFT JOIN book_authors ba ON b.id = ba.book_id
@@ -97,13 +97,13 @@ SELECT
     b.id,
     b.title,
     b.publish_date,
-    GROUP_CONCAT(DISTINCT a2.author_name, ', ') as all_authors
+    GROUP_CONCAT(DISTINCT a2.author_name) as all_authors
 FROM books b
 JOIN book_authors ba ON b.id = ba.book_id
 JOIN authors a ON ba.author_id = a.id
 LEFT JOIN book_authors ba2 ON b.id = ba2.book_id
 LEFT JOIN authors a2 ON ba2.author_id = a2.id
-WHERE a.author_name = 'J.R.R. Tolkien'
+WHERE a.author_name = 'J. R. R. Tolkien'
 GROUP BY b.id
 ORDER BY b.publish_date;
 
@@ -136,14 +136,15 @@ HAVING COUNT(ba.author_id) > 1;
 SELECT 
     b.id,
     b.title,
-    GROUP_CONCAT(DISTINCT a.author_name, ', ') as authors
+    GROUP_CONCAT(DISTINCT a.author_name) as authors
 FROM books b
 JOIN book_subjects bs ON b.id = bs.book_id
 JOIN subjects s ON bs.subject_id = s.id
 LEFT JOIN book_authors ba ON b.id = ba.book_id
 LEFT JOIN authors a ON ba.author_id = a.id
 WHERE s.subject_name = 'Fantasy'
-GROUP BY b.id;
+GROUP BY b.id
+ORDER BY a.author_name;
 
 -- Count books per subject
 SELECT 
@@ -159,7 +160,7 @@ SELECT
     b.id,
     b.title,
     COUNT(bs.subject_id) as subject_count,
-    GROUP_CONCAT(s.subject_name, ', ') as subjects
+    GROUP_CONCAT(s.subject_name) as subjects
 FROM books b
 LEFT JOIN book_subjects bs ON b.id = bs.book_id
 LEFT JOIN subjects s ON bs.subject_id = s.id
@@ -269,9 +270,9 @@ WHERE
 -- Find duplicate books (same title and author)
 SELECT 
     b1.title,
-    GROUP_CONCAT(DISTINCT a.author_name, ', ') as authors,
+    GROUP_CONCAT(DISTINCT a.author_name) as authors,
     COUNT(*) as duplicate_count,
-    GROUP_CONCAT(b1.id, ', ') as book_ids
+    GROUP_CONCAT(b1.id) as book_ids
 FROM books b1
 JOIN books b2 ON b1.title = b2.title AND b1.id < b2.id
 JOIN book_authors ba ON b1.id = ba.book_id
