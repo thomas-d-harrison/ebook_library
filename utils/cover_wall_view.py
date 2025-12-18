@@ -4,8 +4,8 @@ import os
 
 app = Flask(__name__)
 
-# Database is in ../infra/tt_db_ebook_lib.db
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'infra', 'tt_db_ebook_lib.db')
+# Database is in ../infra/data/tt_db_ebook_lib.db
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'infra', 'data', 'tt_db_ebook_lib.db')
 
 COVER_WALL_TEMPLATE = '''
 <!DOCTYPE html>

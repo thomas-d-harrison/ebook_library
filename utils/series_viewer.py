@@ -2,7 +2,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / '..' / 'infra' / 'tt_db_ebook_lib.db'
+DB_PATH = Path(__file__).parent / '..' / 'infra' / 'data' / 'tt_db_ebook_lib.db'
 
 def view_series(series_name=None):
     """View books in a series from command line"""

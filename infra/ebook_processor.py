@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 class EbookCatalog:
-    def __init__(self, db_path='tt_db_ebook_lib.db'):
+    def __init__(self, db_path='data/tt_db_ebook_lib.db'):
         self.db_path = db_path
         self.conn = None
         self.cursor = None
