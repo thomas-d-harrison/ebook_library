@@ -24,19 +24,19 @@
 - 🎨 **Cover Wall** - Beautiful visual grid of all your book covers
 - 🌐 **Web Interface** - Access your library from any device
 - ⬇️ **Downloads** - Direct download to any device
-- 📈 **Reading History (StoryGraph)** - Import reading progress, ratings, and reviews
+- 📈 **Reading History** - Import reading progress, ratings, and reviews
 
 ## 📁 Project Structure
 
 ```
 Library/
-├── 📂 infra/                    # Database files and processors (ebook + StoryGraph)
-│   ├── ebook_processor.py        # Builds DB + ingests ebook metadata
-│   ├── storygraph_processor.py   # Imports StoryGraph CSV reading history
+├── 📂 infra/                  # Database files and processors (ebook + StoryGraph)
+│   ├── ebook_processor.py      # Builds DB + ingests ebook metadata
+│   ├── storygraph_processor.py  # Imports StoryGraph CSV reading history
 │   └── storygraph_data.csv       # File exported from reading history tracking
 ├── 📂 utils/                    # Utility scripts (dedupe folders, series viewer, SQL helpers)
-├── 📂 debug/                    # Debugging / exploration scripts
-└── 📂 lib/                     # eBook files (extract or place your library root here)
+├── 📂 debug/                   # Debugging / exploration scripts
+└── 📂 lib/                    # eBook files (extract or place your library root here)
 ```
 
 ---
@@ -63,11 +63,26 @@ python library_web_server.py
 
 ### 1️⃣ Process Your Books
 
-Builds the core ebook catalog (books, authors, series, metadata):
+Builds the core ebook catalog (books, authors, series, metadata).
+
+**Steps:**
+
+1. [Download eBook library](https://drive.google.com/drive/folders/1aGTJdt27fEIrZqBuJBEksnyos8ODXsxp?usp=sharing) or locate your eBook files
+2. Place the root folder in `infra`
+3. Run:
 
 ```bash
 python ebook_processor.py
 ```
+Data is stored in:
+
+- `books`
+- `subjects`
+- `book_subjects`
+- `series`
+- `book_series`
+- `authors`
+- `book_authors`
 
 ### 2️⃣ Import StoryGraph Reading History
 
@@ -76,7 +91,7 @@ Imports your StoryGraph CSV export and links it to existing books when possible.
 **Steps:**
 
 1. Export your data from StoryGraph (CSV)
-2. Place the CSV file in the same directory as `storygraph_processor.py`
+2. Place the CSV file in `infra`
 3. Run:
 
 ```bash
