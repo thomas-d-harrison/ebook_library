@@ -292,3 +292,11 @@ LEFT JOIN authors a ON ba.author_id = a.id
 GROUP BY b.id
 ORDER BY b.created_at DESC
 LIMIT 20;
+
+select * 
+from books b 
+join book_series bs on b.id = bs.book_id 
+join series s on s.id = bs.series_id
+where s.series_name = 'Sun Eater';
+
+SELECT id, series_name FROM series ORDER BY series_name

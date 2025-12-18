@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 
 class StoryGraphImporter:
-    def __init__(self, db_path='tt_db_ebook_lib.db'):
+    def __init__(self, db_path='data/tt_db_ebook_lib.db'):
         self.db_path = db_path
         self.conn = None
         self.cursor = None
@@ -244,7 +244,7 @@ def main():
     importer.create_reading_tables()
     
     # Import CSV (use the actual file name)
-    csv_path = Path(__file__).parent / 'tt storygraph data.csv'
+    csv_path = Path(__file__).parent / 'data' / 'tt storygraph data.csv'
     print(f"\nImporting from: {csv_path}")
 
     importer.import_storygraph_csv(csv_path)

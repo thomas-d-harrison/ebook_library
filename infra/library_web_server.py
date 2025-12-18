@@ -5,8 +5,8 @@ from pathlib import Path
 
 app = Flask(__name__)
 
-# Database is in ../infra/tt_db_ebook_lib.db
-DB_PATH = Path(__file__).parent / '..' / 'infra' / 'tt_db_ebook_lib.db'
+# Database is in ../infra/data/tt_db_ebook_lib.db
+DB_PATH = Path(__file__).parent / '..' / 'infra' / 'data' / 'tt_db_ebook_lib.db'
 
 # HTML template
 HTML_TEMPLATE = '''
