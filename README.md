@@ -86,12 +86,12 @@ Data is stored in:
 
 ### 2️⃣ Import StoryGraph Reading History
 
-Imports your StoryGraph CSV export and links it to existing books when possible.
+Imports your Reading History CSV export and links it to existing books when possible.
 
 **Steps:**
 
-1. Export your data from StoryGraph (CSV)
-2. Place the CSV file in `infra`
+1. Export your data (.csv) from a reading tracking app (e.g. StoryGraph)
+2. Place the .csv file in `infra`
 3. Run:
 
 ```bash
