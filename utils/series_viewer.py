@@ -1,10 +1,13 @@
 import sqlite3
 import sys
+from pathlib import Path
 
-def view_series(series_name=None, db_path='ebook_library.db'):
+DB_PATH = Path(__file__).parent / '..' / 'infra' / 'tt_db_ebook_lib.db'
+
+def view_series(series_name=None):
     """View books in a series from command line"""
     
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
     # If no series name provided, list all series
