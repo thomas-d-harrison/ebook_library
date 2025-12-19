@@ -29,7 +29,7 @@ HTML_TEMPLATE = '''
             padding: 20px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         header {
@@ -39,6 +39,7 @@ HTML_TEMPLATE = '''
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             margin-bottom: 30px;
             text-align: center;
+            position: relative;
         }
         h1 {
             color: #1a4d2e;
@@ -50,15 +51,16 @@ HTML_TEMPLATE = '''
             font-size: 1.1em;
             margin-bottom: 15px;
         }
-        .total-books-banner {
+        .total-books-badge {
+            display: inline-block;
             background: linear-gradient(135deg, #2d5f3f 0%, #4a7c59 100%);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 1.8em;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
             font-weight: bold;
-            margin-top: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-top: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
         .search-bar {
             background: rgba(255, 255, 255, 0.95);
@@ -108,7 +110,7 @@ HTML_TEMPLATE = '''
         }
         .stat-card {
             background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
+            padding: 5px;
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
             text-align: center;
@@ -143,6 +145,7 @@ HTML_TEMPLATE = '''
             cursor: pointer;
             display: flex;
             gap: 15px;
+            height: auto;
         }
         .book-card:hover {
             transform: translateY(-5px);
@@ -172,39 +175,60 @@ HTML_TEMPLATE = '''
         .book-card-info {
             flex: 1;
             min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .book-title {
-            font-size: 1.3em;
+            font-size: 1.25em;
             font-weight: bold;
             color: #1a4d2e;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.3;
         }
         .book-author {
             color: #4a7c59;
-            font-size: 1.1em;
-            margin-bottom: 10px;
+            font-size: 1.05em;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .book-series {
             background: #e8f5e9;
-            padding: 5px 10px;
+            padding: 4px 10px;
             border-radius: 5px;
             display: inline-block;
             font-size: 0.9em;
             color: #2d5f3f;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
         .book-subjects {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
-            margin-top: 10px;
+            margin-top: 8px;
+            align-content: flex-start;
         }
         .subject-tag {
             background: #4a7c59;
             color: white;
-            padding: 3px 10px;
+            padding: 4px 10px;
             border-radius: 15px;
             font-size: 0.8em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
         }
         .no-results {
             text-align: center;
@@ -378,12 +402,43 @@ HTML_TEMPLATE = '''
             border-bottom: 1px solid #e8f5e9;
             cursor: pointer;
             transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
         .list-item:hover {
             background: #e8f5e9;
         }
         .list-item:last-child {
             border-bottom: none;
+        }
+        .list-item-covers {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .list-item-cover-thumb {
+            width: 40px;
+            height: 60px;
+            border-radius: 3px;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .list-item-cover-placeholder {
+            width: 40px;
+            height: 60px;
+            background: linear-gradient(135deg, #2d5f3f 0%, #4a7c59 100%);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .list-item-info {
+            flex: 1;
+            min-width: 0;
         }
         .list-item-name {
             font-size: 1.2em;
@@ -419,9 +474,9 @@ HTML_TEMPLATE = '''
 <body>
     <div class="container">
         <header>
-            <h1>📚 TT's eLibrary</h1>
-            <p class="subtitle">Browse and download our ebook collection</p>
-            <div class="total-books-banner" id="totalBooksBanner">
+            <h1>📚 TT's eLibrary 🌐</h1>
+            <p class="subtitle">Browse and download the eBook collection</p>
+            <div class="total-books-badge" id="totalBooksBadge">
                 Loading...
             </div>
         </header>
@@ -636,8 +691,8 @@ HTML_TEMPLATE = '''
         }
 
         function updateStats(stats) {
-            document.getElementById('totalBooksBanner').textContent = 
-                `📚 ${stats.total_books} Books in Collection`;
+            document.getElementById('totalBooksBadge').textContent = 
+                `📖 ${stats.total_books} Books in Collection 📖`;
             document.getElementById('totalAuthors').textContent = stats.total_authors;
             document.getElementById('totalSeries').textContent = stats.total_series;
             document.getElementById('totalSubjects').textContent = stats.total_subjects;
@@ -645,7 +700,7 @@ HTML_TEMPLATE = '''
 
         async function showAuthors() {
             try {
-                const response = await fetch('/api/authors');
+                const response = await fetch('/api/authors-with-covers');
                 allAuthors = await response.json();
                 
                 document.getElementById('mainView').style.display = 'none';
@@ -655,8 +710,17 @@ HTML_TEMPLATE = '''
                 const container = document.getElementById('listContainer');
                 container.innerHTML = allAuthors.map(author => `
                     <div class="list-item" onclick="filterByAuthor('${author.name.replace(/'/g, "\\'")}')">
-                        <div class="list-item-name">${author.name}</div>
-                        <div class="list-item-count">${author.book_count} book${author.book_count !== 1 ? 's' : ''}</div>
+                        <div class="list-item-covers">
+                            ${author.covers.slice(0, 4).map(cover => 
+                                cover.has_cover ? 
+                                `<img src="/api/cover/${cover.book_id}" class="list-item-cover-thumb" alt="${cover.title}">` :
+                                `<div class="list-item-cover-placeholder">📚</div>`
+                            ).join('')}
+                        </div>
+                        <div class="list-item-info">
+                            <div class="list-item-name">${author.name}</div>
+                            <div class="list-item-count">${author.book_count} book${author.book_count !== 1 ? 's' : ''}</div>
+                        </div>
                     </div>
                 `).join('');
             } catch (error) {
@@ -666,7 +730,7 @@ HTML_TEMPLATE = '''
 
         async function showSeries() {
             try {
-                const response = await fetch('/api/series');
+                const response = await fetch('/api/series-with-covers');
                 allSeries = await response.json();
                 
                 document.getElementById('mainView').style.display = 'none';
@@ -676,8 +740,17 @@ HTML_TEMPLATE = '''
                 const container = document.getElementById('listContainer');
                 container.innerHTML = allSeries.map(series => `
                     <div class="list-item" onclick="filterBySeries('${series.name.replace(/'/g, "\\'")}')">
-                        <div class="list-item-name">${series.name}</div>
-                        <div class="list-item-count">${series.book_count} book${series.book_count !== 1 ? 's' : ''}</div>
+                        <div class="list-item-covers">
+                            ${series.covers.slice(0, 4).map(cover => 
+                                cover.has_cover ? 
+                                `<img src="/api/cover/${cover.book_id}" class="list-item-cover-thumb" alt="${cover.title}">` :
+                                `<div class="list-item-cover-placeholder">📚</div>`
+                            ).join('')}
+                        </div>
+                        <div class="list-item-info">
+                            <div class="list-item-name">${series.name}</div>
+                            <div class="list-item-count">${series.book_count} book${series.book_count !== 1 ? 's' : ''}</div>
+                        </div>
                     </div>
                 `).join('');
             } catch (error) {
@@ -782,7 +855,7 @@ def get_all_books():
             FROM subjects s
             JOIN book_subjects bs ON s.id = bs.subject_id
             WHERE bs.book_id = ?
-            LIMIT 5
+            LIMIT 4
         ''', (book_id,))
         subjects = [row[0] for row in cursor.fetchall()]
         
@@ -883,7 +956,7 @@ def get_stats():
     }
 
 def get_all_authors_with_counts():
-    """Get all authors with book counts"""
+    """Get all authors with book counts and cover images"""
     conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
@@ -895,12 +968,40 @@ def get_all_authors_with_counts():
         ORDER BY a.author_name
     ''')
     
-    result = [{'name': row[0], 'book_count': row[1]} for row in cursor.fetchall()]
+    authors = cursor.fetchall()
+    result = []
+    
+    for author_name, book_count in authors:
+        # Get up to 4 book covers for this author
+        cursor.execute('''
+            SELECT b.id, b.title, b.cover_path
+            FROM books b
+            JOIN book_authors ba ON b.id = ba.book_id
+            JOIN authors a ON ba.author_id = a.id
+            WHERE a.author_name = ?
+            LIMIT 4
+        ''', (author_name,))
+        
+        covers = []
+        for book_id, title, cover_path in cursor.fetchall():
+            has_cover = cover_path is not None and os.path.exists(cover_path)
+            covers.append({
+                'book_id': book_id,
+                'title': title,
+                'has_cover': has_cover
+            })
+        
+        result.append({
+            'name': author_name,
+            'book_count': book_count,
+            'covers': covers
+        })
+    
     conn.close()
     return result
 
 def get_all_series_with_counts():
-    """Get all series with book counts"""
+    """Get all series with book counts and cover images"""
     conn = sqlite3.connect(str(DB_PATH))
     cursor = conn.cursor()
     
@@ -912,7 +1013,36 @@ def get_all_series_with_counts():
         ORDER BY s.series_name
     ''')
     
-    result = [{'name': row[0], 'book_count': row[1]} for row in cursor.fetchall()]
+    series_list = cursor.fetchall()
+    result = []
+    
+    for series_name, book_count in series_list:
+        # Get up to 4 book covers for this series
+        cursor.execute('''
+            SELECT b.id, b.title, b.cover_path
+            FROM books b
+            JOIN book_series bs ON b.id = bs.book_id
+            JOIN series s ON bs.series_id = s.id
+            WHERE s.series_name = ?
+            ORDER BY bs.series_index
+            LIMIT 4
+        ''', (series_name,))
+        
+        covers = []
+        for book_id, title, cover_path in cursor.fetchall():
+            has_cover = cover_path is not None and os.path.exists(cover_path)
+            covers.append({
+                'book_id': book_id,
+                'title': title,
+                'has_cover': has_cover
+            })
+        
+        result.append({
+            'name': series_name,
+            'book_count': book_count,
+            'covers': covers
+        })
+    
     conn.close()
     return result
 
@@ -951,8 +1081,18 @@ def api_authors():
     authors = get_all_authors_with_counts()
     return jsonify(authors)
 
+@app.route('/api/authors-with-covers')
+def api_authors_with_covers():
+    authors = get_all_authors_with_counts()
+    return jsonify(authors)
+
 @app.route('/api/series')
 def api_series():
+    series = get_all_series_with_counts()
+    return jsonify(series)
+
+@app.route('/api/series-with-covers')
+def api_series_with_covers():
     series = get_all_series_with_counts()
     return jsonify(series)
 
@@ -998,7 +1138,7 @@ if __name__ == '__main__':
         print("Make sure tt_db_ebook_lib.db is in the ../infra/ folder.")
     else:
         print("="*60)
-        print("TT's eLibrary")
+        print("Family Library Web Catalog")
         print("="*60)
         print("\nStarting server...")
         print("\nOpen your browser and go to:")
