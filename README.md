@@ -41,7 +41,7 @@ Library/
 │   └── *_queries.sql           # Insightful queries
 ├── 📂 debug/                  # Debugging / exploration scripts
 └── 📂 lib/                   # eBook files (extract or place your library root here)
-    ├─ 📂 Author/
+    └─ 📂 Author/
        └─ 📂 Book Title/
           └─ book.*
 ```
