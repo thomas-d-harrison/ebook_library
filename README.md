@@ -5,7 +5,6 @@
 ![Flask](https://img.shields.io/badge/flask-2.0+-green.svg)
 ![SQLite](https://img.shields.io/badge/sqlite-3-yellow.svg)
 
-
 ## 🐍 Prerequisites
 
 **Python 3.8+** is required. Don't have Python? 
@@ -82,15 +81,6 @@ Builds the core eBook catalog (books, authors, series, metadata).
 ```bash
 python ebook_processor.py
 ```
-Data is stored in:
-
-- `books`
-- `subjects`
-- `book_subjects`
-- `series`
-- `book_series`
-- `authors`
-- `book_authors`
 
 ### 2️⃣ Import Reading History
 
@@ -107,9 +97,95 @@ python storygraph_processor.py
 ```
 Data is stored in:
 
-- `reading_history`
-- `book_attributes`
-- `content_warnings`
+```mermaid
+erDiagram
+    books {
+      INT id PK
+      TEXT title
+      TEXT description
+      DATE publication_date
+    }
+
+    authors {
+      INT id PK
+      TEXT name
+    }
+
+    book_authors {
+      INT book_id PK, FK
+      INT author_id PK, FK
+    }
+
+    series {
+      INT id PK
+      TEXT name
+    }
+
+    book_series {
+      INT book_id PK, FK
+      INT series_id FK
+      INT series_index
+    }
+
+    subjects {
+      INT id PK
+      TEXT name
+    }
+
+    book_subjects {
+      INT book_id PK, FK
+      INT subject_id PK, FK
+    }
+
+    content_warnings {
+      INT id PK
+      TEXT name
+    }
+
+    book_files {
+      INT id PK
+      INT book_id FK
+      TEXT file_path
+      TEXT file_type
+    }
+
+    book_attributes {
+      INT id PK
+      INT book_id FK
+      TEXT key
+      TEXT value
+    }
+
+    reading_history {
+      INT id PK
+      INT book_id FK
+      DATE date
+      TEXT status
+      INT rating
+    }
+
+    authors ||--o{ book_authors : writes
+    books   ||--o{ book_authors : has
+
+    series ||--o{ book_series : contains
+    books  ||--o{ book_series : appears_in
+
+    subjects ||--o{ book_subjects : categorizes
+    books    ||--o{ book_subjects : has
+
+    books ||--o{ book_files : has
+    books ||--o{ book_attributes : has
+    books ||--o{ reading_history : has
+
+    %% If books have many content warnings, add a link table like:
+    %% book_content_warnings {
+    %%   INT book_id PK, FK
+    %%   INT content_warning_id PK, FK
+    %% }
+    %% content_warnings ||--o{ book_content_warnings : defines
+    %% books            ||--o{ book_content_warnings : has
+
+```
 
 ### 3️⃣ Browse Your Library
 
