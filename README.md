@@ -44,6 +44,7 @@ Library/
 │   ├── storygraph_processor.py    # Ingests reading history data
 │   └── library_web_server.py      # Starts the eLibrary webpage
 ├── 📂 utils/                      # Utility scripts (dedupe folders, cover art grid, etc.)
+│   ├── data_quality_tests.py      # Runs quality checks
 │   ├── series_viewer.py           # Gets series data for viewing and for webpage to use
 │   └── *_queries.sql              # Useful queries
 ├── 📂 debug/                      # Debugging / exploration scripts
