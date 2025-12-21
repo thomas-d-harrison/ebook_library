@@ -29,21 +29,28 @@
 
 ```
 Library/
-├── 📂 infra/                # All infrastructure necessary for system
-│   └─ 📂 data                # eLibrary database file and reading history data
-│   │  ├── tt_db_ebook_lib.db   # !*ebook_processor.py will create this db file*!
-│   │  └── reading_activity.csv  # !*your file of your historical reading activity*!
-│   ├── ebook_processor.py        # Builds database and ingests eBook metadata
-│   ├── storygraph_processor.py   # Ingests reading history data
-│   └── library_web_server.py     # Starts the eLibrary webpage
-├── 📂 utils/                    # Utility scripts (dedupe folders, cover art grid, etc.)
-│   ├── series_viewer.py         # Gets series data for viewing and for webpage to use
-│   └── *_queries.sql           # Insightful queries
-├── 📂 debug/                  # Debugging / exploration scripts
-└── 📂 lib/                   # eBook files (extract or place your library root here)
-    └─ 📂 Author/
-       └─ 📂 Book Title/
-          └─ book.*
+├── 📂 infra/                     # All infrastructure necessary for system
+│   ├── 📂 data/                  # eLibrary database and reading history data
+│   │   ├── tt_db_ebook_lib.db     # !*ebook_processor.py will create this db file*!
+│   │   └── reading_activity.csv   # !*your file of your historical reading activity*!
+│   ├── 📂 templates/             # HTML templates for web interface
+│   │   └── index.html             # Main library webpage template
+│   ├── 📂 static/                # Static assets for web interface
+│   │   ├── 📂 css/
+│   │   │   └── style.css          # Stylesheet for library webpage
+│   │   └── 📂 js/
+│   │       └── main.js            # JavaScript for library webpage
+│   ├── ebook_processor.py         # Builds database and ingests eBook metadata
+│   ├── storygraph_processor.py    # Ingests reading history data
+│   └── library_web_server.py      # Starts the eLibrary webpage
+├── 📂 utils/                      # Utility scripts (dedupe folders, cover art grid, etc.)
+│   ├── series_viewer.py           # Gets series data for viewing and for webpage to use
+│   └── *_queries.sql              # Insightful queries
+├── 📂 debug/                      # Debugging / exploration scripts
+└── 📂 lib/                        # eBook files (extract or place your library root here)
+    └── 📂 Author/
+        └── 📂 Book Title/
+            └── book.*
 ```
 
 ---
