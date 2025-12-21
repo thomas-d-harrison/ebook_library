@@ -22,7 +22,7 @@ class EbookCatalog:
             CREATE TABLE IF NOT EXISTS books (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT,
-                book_folder TEXT,
+                book_folder TEXT UNIQUE,
                 isbn TEXT,
                 publisher TEXT,
                 publish_date TEXT,
@@ -58,7 +58,7 @@ class EbookCatalog:
             CREATE TABLE IF NOT EXISTS book_files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 book_id INTEGER,
-                file_path TEXT,
+                file_path TEXT UNIQUE,
                 file_format TEXT,
                 file_size INTEGER,
                 FOREIGN KEY (book_id) REFERENCES books (id)
@@ -300,7 +300,13 @@ class EbookCatalog:
             VALUES (?, ?, ?)
         ''', (book_id, series_id, series_index))
     
-    def scan_library(self, library_path):
+    def book_exists(self, book_folder):
+        """Check if a book already exists in the database by folder path"""
+        self.cursor.execute('SELECT id FROM books WHERE book_folder = ?', (str(book_folder),))
+        result = self.cursor.fetchone()
+        return result[0] if result else None
+    
+    def scan_library(self, library_path, skip_existing=True):
         """Scan the library folder structure and add books to database"""
         library_path = Path(library_path)
         
@@ -310,6 +316,7 @@ class EbookCatalog:
         
         ignored_folders = {'.calnote', '.archive'}
         books_added = 0
+        books_skipped = 0
         
         for author_folder in library_path.iterdir():
             if not author_folder.is_dir():
@@ -327,6 +334,11 @@ class EbookCatalog:
             
             for book_folder in author_folder.iterdir():
                 if not book_folder.is_dir():
+                    continue
+                
+                # Check if book already exists
+                if skip_existing and self.book_exists(book_folder):
+                    books_skipped += 1
                     continue
                 
                 book_name = book_folder.name
@@ -349,56 +361,63 @@ class EbookCatalog:
                     elif file.suffix.lower() in ['.epub', '.mobi', '.azw', '.azw3', '.pdf', '.txt']:
                         book_files.append(file)
                 
-                self.cursor.execute('''
-                    INSERT INTO books (title, book_folder, isbn, publisher, 
-                                     publish_date, language, description, cover_path, metadata_path)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    metadata.get('title', book_name),
-                    str(book_folder),
-                    metadata.get('isbn'),
-                    metadata.get('publisher'),
-                    metadata.get('publish_date'),
-                    metadata.get('language'),
-                    metadata.get('description'),
-                    cover_file,
-                    opf_file
-                ))
-                
-                book_id = self.cursor.lastrowid
-                
-                if metadata.get('authors'):
-                    self.link_book_authors(book_id, metadata['authors'])
-                
-                if metadata.get('subjects'):
-                    self.link_book_subjects(book_id, metadata['subjects'])
-                
-                if metadata.get('series'):
-                    self.link_book_series(book_id, metadata['series'], metadata.get('series_index'))
-                
-                for book_file in book_files:
-                    file_size = book_file.stat().st_size
+                try:
                     self.cursor.execute('''
-                        INSERT INTO book_files (book_id, file_path, file_format, file_size)
-                        VALUES (?, ?, ?, ?)
-                    ''', (book_id, str(book_file), book_file.suffix.lower(), file_size))
+                        INSERT INTO books (title, book_folder, isbn, publisher, 
+                                         publish_date, language, description, cover_path, metadata_path)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        metadata.get('title', book_name),
+                        str(book_folder),
+                        metadata.get('isbn'),
+                        metadata.get('publisher'),
+                        metadata.get('publish_date'),
+                        metadata.get('language'),
+                        metadata.get('description'),
+                        cover_file,
+                        opf_file
+                    ))
+                    
+                    book_id = self.cursor.lastrowid
+                    
+                    if metadata.get('authors'):
+                        self.link_book_authors(book_id, metadata['authors'])
+                    
+                    if metadata.get('subjects'):
+                        self.link_book_subjects(book_id, metadata['subjects'])
+                    
+                    if metadata.get('series'):
+                        self.link_book_series(book_id, metadata['series'], metadata.get('series_index'))
+                    
+                    for book_file in book_files:
+                        file_size = book_file.stat().st_size
+                        self.cursor.execute('''
+                            INSERT OR IGNORE INTO book_files (book_id, file_path, file_format, file_size)
+                            VALUES (?, ?, ?, ?)
+                        ''', (book_id, str(book_file), book_file.suffix.lower(), file_size))
+                    
+                    books_added += 1
+                    # Extract author names for display
+                    authors_display = []
+                    for author in metadata['authors']:
+                        if isinstance(author, dict):
+                            authors_display.append(author['name'])
+                        else:
+                            authors_display.append(author)
+                    authors_str = ', '.join(authors_display)
+                    subjects_info = f" | Subjects: {', '.join(metadata['subjects'][:3])}" if metadata.get('subjects') else ""
+                    series_info = f" | Series: {metadata['series']} #{metadata.get('series_index', '?')}" if metadata.get('series') else ""
+                    print(f"  ✓ Added: {metadata.get('title', book_name)} by {authors_str}{series_info}{subjects_info}")
                 
-                books_added += 1
-                # Extract author names for display
-                authors_display = []
-                for author in metadata['authors']:
-                    if isinstance(author, dict):
-                        authors_display.append(author['name'])
-                    else:
-                        authors_display.append(author)
-                authors_str = ', '.join(authors_display)
-                subjects_info = f" | Subjects: {', '.join(metadata['subjects'][:3])}" if metadata.get('subjects') else ""
-                series_info = f" | Series: {metadata['series']} #{metadata.get('series_index', '?')}" if metadata.get('series') else ""
-                print(f"  ✓ Added: {metadata.get('title', book_name)} by {authors_str}{series_info}{subjects_info}")
+                except sqlite3.IntegrityError as e:
+                    print(f"  ⚠ Skipped (already exists): {book_name}")
+                    books_skipped += 1
         
         self.conn.commit()
         print(f"\n{'='*50}")
         print(f"Successfully added {books_added} books to the database!")
+        if books_skipped > 0:
+            print(f"Skipped {books_skipped} books (already in database)")
     
     def search_books(self, query):
         """Search for books by title, author, subject, or series"""
@@ -511,14 +530,46 @@ if __name__ == "__main__":
     print("Ebook Library Cataloger")
     print("="*50)
     
+    # Check if database already exists
+    db_path = 'data/tt_db_ebook_lib.db'
+    db_exists = os.path.exists(db_path)
+    
+    if db_exists:
+        print(f"\n⚠ Database already exists at: {db_path}")
+        print("\nWhat would you like to do?")
+        print("  [O] Overwrite - Delete existing database and start fresh")
+        print("  [A] Append - Add new books to existing database (skip duplicates)")
+        print("  [C] Cancel - Exit without making changes")
+        
+        while True:
+            choice = input("\nEnter your choice (O/A/C): ").strip().upper()
+            if choice in ['O', 'A', 'C']:
+                break
+            print("Invalid choice. Please enter O, A, or C.")
+        
+        if choice == 'C':
+            print("Operation cancelled.")
+            exit()
+        elif choice == 'O':
+            confirm = input("Are you sure you want to delete the existing database? (yes/no): ").strip().lower()
+            if confirm == 'yes':
+                os.remove(db_path)
+                print("✓ Existing database deleted.")
+            else:
+                print("Operation cancelled.")
+                exit()
+        else:
+            print("✓ Will append to existing database (skip duplicates).")
+    
     library_path = input("\nEnter the path to your ebook library folder: ").strip()
     library_path = library_path.strip('"').strip("'")
     
-    catalog = EbookCatalog()
+    catalog = EbookCatalog(db_path)
     catalog.connect()
     catalog.create_tables()
     
-    catalog.scan_library(library_path)
+    skip_existing = db_exists and choice == 'A'
+    catalog.scan_library(library_path, skip_existing=skip_existing)
     
     print("\n" + "="*50)
     print("All series found in your library:")
