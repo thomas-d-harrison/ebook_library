@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TT's eLibrary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header-sticky-container">
+        <header>
+            <div class="header-content">
+                <div class="header-ctas">
+                    <button class="header-cta-btn" onclick="showAuthors()">📚 Authors</button>
+                    <button class="header-cta-btn" onclick="showSeries()">📖 Series</button>
+                </div>
+                <div class="header-center">
+                    <h1>📚 TT's eLibrary 🌐</h1>
+                    <p class="subtitle">Browse and download the eBook collection</p>
+                </div>
+                <div class="header-right">
+                    <button class="total-books-badge" id="totalBooksBadge" onclick="showAllBooks()">Loading...</button>
+                </div>
+            </div>
+        </header>
+    </div>
+    <div class="container">
+        <div id="mainView">
+            <div class="search-bar">
+                <div class="search-controls">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search by title, author, subject, or series...">
+                    <select class="sort-select" id="sortSelect">
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                        <option value="author-asc">Author (A-Z)</option>
+                        <option value="author-desc">Author (Z-A)</option>
+                        <option value="recent">Recently Added</option>
+                    </select>
+                </div>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">All Books</button>
+                    <button class="filter-btn" data-filter="series">In Series</button>
+                    <button class="filter-btn" data-filter="standalone">Standalone</button>
+                </div>
+            </div>
+            <div id="booksContainer">
+                <div class="loading">Loading library...</div>
+            </div>
+        </div>
+        
+        <div id="listView" style="display: none;">
+            <div class="list-view">
+                <button class="back-btn" onclick="showMainView()">← Back to Library</button>
+                <h2 id="listTitle"></h2>
+                <div id="listContainer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div></div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading">Loading book details...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
