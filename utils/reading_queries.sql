@@ -116,3 +116,10 @@ FROM reading_history rh
 JOIN book_attributes ba ON rh.id = ba.reading_history_id
 WHERE ba.strong_character_dev = 'Yes'
 ORDER BY rh.star_rating DESC;
+
+
+select * from reading_history;
+select * from books;
+select * from book_attributes;
+
+select * from tt_db_ebook_lib.information_schema.tables;
