@@ -62,6 +62,7 @@ Library/
 ```bash
 # Install dependencies
 py -m pip install flask
+py -m pip install requests
 
 # Build eBook catalog database
 python ebook_processor.py
