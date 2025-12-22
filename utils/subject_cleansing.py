@@ -337,7 +337,130 @@ class SubjectCleanup:
         
         return duplicates
     
-    def clean_subjects(self, dry_run=True):
+    def update_opf_file(self, opf_path, old_subjects, new_subjects):
+        """Update the OPF file with cleaned subjects"""
+        import xml.etree.ElementTree as ET
+        
+        try:
+            # Parse the OPF file
+            tree = ET.parse(opf_path)
+            root = tree.getroot()
+            
+            # Handle namespaces
+            ns = {
+                'opf': 'http://www.idpf.org/2007/opf',
+                'dc': 'http://purl.org/dc/elements/1.1/'
+            }
+            
+            # Register namespaces to preserve them in output
+            ET.register_namespace('opf', 'http://www.idpf.org/2007/opf')
+            ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
+            
+            # Find metadata section
+            metadata = root.find('.//opf:metadata', ns)
+            if metadata is None:
+                metadata = root.find('.//metadata')
+            
+            if metadata is None:
+                print(f"    ⚠️  Could not find metadata section in {opf_path}")
+                return False
+            
+            # Remove all existing subject elements
+            for prefix in ['', 'dc:']:
+                for subject_elem in metadata.findall(f'.//{prefix}subject', ns if prefix else {}):
+                    metadata.remove(subject_elem)
+            
+            # Add new subject elements
+            for subject in new_subjects:
+                # Try to use the dc: namespace
+                subject_elem = ET.Element('{http://purl.org/dc/elements/1.1/}subject')
+                subject_elem.text = subject
+                metadata.append(subject_elem)
+            
+            # Write back to file
+            tree.write(opf_path, encoding='utf-8', xml_declaration=True)
+            return True
+            
+        except Exception as e:
+            print(f"    ❌ Error updating {opf_path}: {e}")
+            return False
+    
+    def clean_opf_files(self, dry_run=True):
+        """Clean subjects in the source OPF files"""
+        self.print_separator("CLEANING OPF SOURCE FILES")
+        
+        if dry_run:
+            print("\n⚠️  DRY RUN MODE - No files will be modified\n")
+        
+        # Get all books with OPF files
+        self.cursor.execute("""
+            SELECT b.id, b.title, b.metadata_path
+            FROM books b
+            WHERE b.metadata_path IS NOT NULL
+        """)
+        books = self.cursor.fetchall()
+        
+        print(f"Found {len(books)} books with OPF files\n")
+        
+        files_modified = 0
+        subjects_changed = 0
+        
+        for book_id, title, opf_path in books:
+            # Get current subjects for this book
+            self.cursor.execute("""
+                SELECT s.subject_name
+                FROM subjects s
+                JOIN book_subjects bs ON s.id = bs.subject_id
+                WHERE bs.book_id = ?
+            """, (book_id,))
+            current_subjects = [row[0] for row in self.cursor.fetchall()]
+            
+            if not current_subjects:
+                continue
+            
+            # Clean the subjects
+            all_new_subjects = []
+            for subject in current_subjects:
+                cleaned = self.split_subject(subject)
+                all_new_subjects.extend(cleaned)
+            
+            # Remove duplicates
+            all_new_subjects = list(dict.fromkeys(all_new_subjects))
+            
+            # Check if anything changed
+            if set(current_subjects) != set(all_new_subjects):
+                print(f"\n📖 {title}")
+                print(f"  OPF: {opf_path}")
+                print(f"  Old subjects: {current_subjects}")
+                print(f"  New subjects: {all_new_subjects}")
+                
+                if not dry_run:
+                    # Check if file exists
+                    import os
+                    if not os.path.exists(opf_path):
+                        print(f"    ⚠️  File not found, skipping")
+                        continue
+                    
+                    # Update the OPF file
+                    if self.update_opf_file(opf_path, current_subjects, all_new_subjects):
+                        print(f"    ✓ OPF file updated")
+                        files_modified += 1
+                        subjects_changed += len(all_new_subjects) - len(current_subjects)
+                
+                else:
+                    files_modified += 1
+                    subjects_changed += len(all_new_subjects) - len(current_subjects)
+        
+        print(f"\n📊 Summary:")
+        print(f"  OPF files that would be modified: {files_modified}")
+        print(f"  Net change in subject count: {subjects_changed:+d}")
+        
+        if dry_run:
+            print(f"\n  Run with dry_run=False to update the OPF files")
+        else:
+            print(f"\n✓ OPF files updated successfully")
+    
+    def clean_subjects(self, dry_run=True, update_opf=False):
         """Clean and standardize subjects"""
         self.print_separator("CLEANING SUBJECTS")
         
@@ -440,14 +563,17 @@ class SubjectCleanup:
             self.print_separator("SUBJECT CLEANUP MENU")
             print("\n1. Analyze subjects (show issues)")
             print("2. Find duplicate subjects")
-            print("3. Preview cleanup (dry run)")
-            print("4. Apply cleanup (make changes)")
-            print("5. Show all subjects")
-            print("6. Search subjects")
-            print("7. Manually merge subjects")
-            print("8. Quit")
+            print("3. Preview database cleanup (dry run)")
+            print("4. Apply database cleanup (make changes)")
+            print("5. Preview OPF file cleanup (dry run)")
+            print("6. Apply OPF file cleanup (update source files)")
+            print("7. Clean both database AND OPF files")
+            print("8. Show all subjects")
+            print("9. Search subjects")
+            print("10. Manually merge subjects")
+            print("11. Quit")
             
-            choice = input("\nEnter your choice (1-8): ").strip()
+            choice = input("\nEnter your choice (1-11): ").strip()
             
             if choice == '1':
                 issues = self.analyze_subjects()
@@ -467,6 +593,26 @@ class SubjectCleanup:
                     print("Cancelled.")
             
             elif choice == '5':
+                self.clean_opf_files(dry_run=True)
+            
+            elif choice == '6':
+                confirm = input("\n⚠️  This will modify your OPF source files. Are you sure? (yes/no): ").strip().lower()
+                if confirm == 'yes':
+                    self.clean_opf_files(dry_run=False)
+                else:
+                    print("Cancelled.")
+            
+            elif choice == '7':
+                confirm = input("\n⚠️  This will modify BOTH database AND OPF files. Are you sure? (yes/no): ").strip().lower()
+                if confirm == 'yes':
+                    print("\n--- Cleaning Database ---")
+                    self.clean_subjects(dry_run=False)
+                    print("\n--- Cleaning OPF Files ---")
+                    self.clean_opf_files(dry_run=False)
+                else:
+                    print("Cancelled.")
+            
+            elif choice == '8':
                 self.cursor.execute('''
                     SELECT s.subject_name, COUNT(bs.book_id) as book_count
                     FROM subjects s
@@ -481,7 +627,7 @@ class SubjectCleanup:
                 if len(results) > 50:
                     print(f"  ... and {len(results) - 50} more")
             
-            elif choice == '6':
+            elif choice == '9':
                 search = input("\nEnter search term: ").strip()
                 self.cursor.execute('''
                     SELECT s.id, s.subject_name, COUNT(bs.book_id) as book_count
@@ -498,7 +644,7 @@ class SubjectCleanup:
                 else:
                     print("No subjects found.")
             
-            elif choice == '7':
+            elif choice == '10':
                 print("\n--- Manual Subject Merge ---")
                 from_id = input("Enter ID of subject to merge FROM: ").strip()
                 to_id = input("Enter ID of subject to merge INTO: ").strip()
@@ -537,7 +683,7 @@ class SubjectCleanup:
                 except ValueError:
                     print("❌ Invalid ID")
             
-            elif choice == '8':
+            elif choice == '11':
                 break
             
             else:
