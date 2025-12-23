@@ -144,7 +144,7 @@ h1 { color: #1a4d2e; font-size: 2.5em; margin: 0; }
     box-shadow: 0 0 10px rgba(45, 95, 63, 0.3);
 }
 
-.filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.filters { display: flex; gap: 10px; flex-wrap: nowrap; align-items: center; }
 
 .filter-btn {
     padding: 8px 16px;

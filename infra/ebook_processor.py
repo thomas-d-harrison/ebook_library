@@ -3,12 +3,17 @@ import sqlite3
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from datetime import datetime
+import requests
+import time
+from urllib.parse import quote
 
 class EbookCatalog:
-    def __init__(self, db_path='data/tt_db_ebook_lib.db'):
+    def __init__(self, db_path='data/tt_db_ebook_lib.db', lookup_gender=False):
         self.db_path = db_path
         self.conn = None
         self.cursor = None
+        self.lookup_gender = lookup_gender
+        self.gender_cache = {}  # Cache to avoid repeated lookups
     
     def connect(self):
         """Connect to SQLite database"""
@@ -40,7 +45,8 @@ class EbookCatalog:
                 author_name TEXT UNIQUE NOT NULL,
                 author_sort TEXT,
                 first_name TEXT,
-                last_name TEXT
+                last_name TEXT,
+                sex TEXT CHECK(sex IN ('M', 'F', 'Unknown', NULL))
             )
         ''')
         
@@ -208,6 +214,156 @@ class EbookCatalog:
         
         return metadata
     
+    
+    def lookup_author_gender(self, author_name, first_name=None):
+        """Look up author gender using Wikipedia API"""
+        # Manual overrides for specific known authors (as fallback)
+        known_authors = {
+            'C. S. Pacat': 'F',
+            'Carla Blumenkranz': 'F',
+            'Douglas Stuart': 'M',
+            'Eleanor Atkinson': 'F',
+            'Emily St. John Mandel': 'F',
+            'Faith Erin Hicks': 'F',
+            'Francis Scott Fitzgerald': 'M',
+            'Gabrielle Zevin': 'F',
+            'Gaye Theresa Johnson': 'F',
+            'Alex Lubin': 'M',
+            'Hiro Arikawa': 'F',
+            'Jacqueline Harpman': 'F',
+            'Junot Diaz': 'M',
+            'L. D. Lewis': 'F',
+            'Charles Payseur': 'M',
+            'M. L. Rio': 'F',
+            'M. L. Wang': 'F',
+            'Marissa Constantinou': 'F',
+            'Matt Dinniman': 'M',
+            'Megan E. O\'Keefe': 'F',
+            'Micah Nemerever': 'M',
+            'Patrisse Khan-Cullors': 'F',
+            'Paula Hawkins': 'F',
+            'R. F. Kuang': 'F',
+            'Steve Berry': 'M',
+            'Tash Aw': 'M',
+            'George M. Johnson': 'M',
+        }
+        
+        # Check cache first
+        if author_name in self.gender_cache:
+            return self.gender_cache[author_name]
+        
+        if not self.lookup_gender:
+            # If lookup is disabled, use known authors list or guess from name
+            if author_name in known_authors:
+                return known_authors[author_name]
+            elif first_name:
+                return self.guess_gender_from_name(first_name)
+            return 'Unknown'
+        
+        try:
+            # Try Wikipedia API
+            search_query = quote(author_name)
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{search_query}"
+            
+            headers = {'User-Agent': 'EbookCatalog/1.0'}
+            response = requests.get(url, headers=headers, timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                extract = data.get('extract', '').lower()
+                
+                # Look for gender pronouns in the first paragraph
+                male_indicators = [' he ', ' his ', ' him ']
+                female_indicators = [' she ', ' her ', ' hers ']
+                
+                male_count = sum(extract.count(indicator) for indicator in male_indicators)
+                female_count = sum(extract.count(indicator) for indicator in female_indicators)
+                
+                if male_count > female_count and male_count > 0:
+                    gender = 'M'
+                elif female_count > male_count and female_count > 0:
+                    gender = 'F'
+                else:
+                    gender = None  # Inconclusive from Wikipedia
+                
+                # If Wikipedia was inconclusive, check known authors list
+                if not gender:
+                    if author_name in known_authors:
+                        gender = known_authors[author_name]
+                    elif first_name:
+                        gender = self.guess_gender_from_name(first_name)
+                    else:
+                        gender = 'Unknown'
+                
+                self.gender_cache[author_name] = gender
+                time.sleep(0.1)  # Be polite to Wikipedia API
+                return gender
+            
+        except Exception as e:
+            pass  # Fall through to backup methods
+        
+        # If Wikipedia lookup fails, check known authors list
+        if author_name in known_authors:
+            gender = known_authors[author_name]
+            self.gender_cache[author_name] = gender
+            return gender
+        
+        # If lookup fails, try to guess from first name as final fallback
+        if first_name:
+            gender = self.guess_gender_from_name(first_name)
+            self.gender_cache[author_name] = gender
+            return gender
+        
+        return 'Unknown'
+    
+    def guess_gender_from_name(self, first_name):
+        """Guess gender from first name using common patterns"""
+        if not first_name:
+            return 'Unknown'
+        
+        first_name = first_name.lower().strip()
+        
+        # Common male names
+        male_names = {
+            'james', 'john', 'robert', 'michael', 'william', 'david', 'richard', 'joseph',
+            'thomas', 'charles', 'christopher', 'daniel', 'matthew', 'anthony', 'mark',
+            'donald', 'steven', 'paul', 'andrew', 'joshua', 'kenneth', 'kevin', 'brian',
+            'george', 'edward', 'ronald', 'timothy', 'jason', 'jeffrey', 'ryan', 'jacob',
+            'gary', 'nicholas', 'eric', 'jonathan', 'stephen', 'larry', 'justin', 'scott',
+            'brandon', 'benjamin', 'samuel', 'raymond', 'gregory', 'frank', 'alexander',
+            'patrick', 'jack', 'dennis', 'jerry', 'tyler', 'aaron', 'jose', 'adam',
+            'henry', 'nathan', 'douglas', 'zachary', 'peter', 'kyle', 'walter', 'ethan',
+            'jeremy', 'harold', 'keith', 'christian', 'roger', 'noah', 'gerald', 'carl',
+            'terry', 'sean', 'austin', 'arthur', 'lawrence', 'jesse', 'dylan', 'bryan',
+            'joe', 'jordan', 'billy', 'bruce', 'albert', 'willie', 'gabriel', 'logan',
+            'alan', 'juan', 'wayne', 'roy', 'ralph', 'randy', 'eugene', 'vincent', 'russell',
+            'elijah', 'louis', 'bobby', 'philip', 'johnny'
+        }
+        
+        # Common female names
+        female_names = {
+            'mary', 'patricia', 'jennifer', 'linda', 'barbara', 'elizabeth', 'susan',
+            'jessica', 'sarah', 'karen', 'nancy', 'lisa', 'betty', 'margaret', 'sandra',
+            'ashley', 'kimberly', 'emily', 'donna', 'michelle', 'dorothy', 'carol', 'amanda',
+            'melissa', 'deborah', 'stephanie', 'rebecca', 'sharon', 'laura', 'cynthia',
+            'kathleen', 'amy', 'angela', 'shirley', 'anna', 'brenda', 'pamela', 'emma',
+            'nicole', 'helen', 'samantha', 'katherine', 'christine', 'debra', 'rachel',
+            'catherine', 'carolyn', 'janet', 'ruth', 'maria', 'heather', 'diane', 'virginia',
+            'julie', 'joyce', 'victoria', 'olivia', 'kelly', 'christina', 'lauren', 'joan',
+            'evelyn', 'judith', 'megan', 'cheryl', 'andrea', 'hannah', 'jacqueline', 'martha',
+            'gloria', 'teresa', 'ann', 'sara', 'madison', 'frances', 'kathryn', 'janice',
+            'jean', 'abigail', 'alice', 'judy', 'sophia', 'grace', 'denise', 'amber',
+            'doris', 'marilyn', 'danielle', 'beverly', 'isabella', 'theresa', 'diana',
+            'natalie', 'brittany', 'charlotte', 'marie', 'kayla', 'alexis', 'lori'
+        }
+        
+        if first_name in male_names:
+            return 'M'
+        elif first_name in female_names:
+            return 'F'
+        else:
+            return 'Unknown'
+    
     def parse_author_name(self, author_name, author_sort=None):
         """Parse author name into first and last name"""
         first_name = None
@@ -237,16 +393,32 @@ class EbookCatalog:
         # Parse name into first and last
         first_name, last_name = self.parse_author_name(author_name, author_sort)
         
+        # Look up gender if enabled
+        gender = None
+        if self.lookup_gender:
+            gender = self.lookup_author_gender(author_name, first_name)
+            print(f"    Gender lookup for {author_name}: {gender}")
+        
         try:
             self.cursor.execute('''
-                INSERT INTO authors (author_name, author_sort, first_name, last_name) 
-                VALUES (?, ?, ?, ?)
-            ''', (author_name, author_sort, first_name, last_name))
+                INSERT INTO authors (author_name, author_sort, first_name, last_name, sex) 
+                VALUES (?, ?, ?, ?, ?)
+            ''', (author_name, author_sort, first_name, last_name, gender))
             return self.cursor.lastrowid
         except sqlite3.IntegrityError:
             # Author already exists, get its ID
             self.cursor.execute('SELECT id FROM authors WHERE author_name = ?', (author_name,))
-            return self.cursor.fetchone()[0]
+            author_id = self.cursor.fetchone()[0]
+            
+            # Update gender if we looked it up and it's not set
+            if self.lookup_gender and gender:
+                self.cursor.execute('''
+                    UPDATE authors 
+                    SET sex = ? 
+                    WHERE id = ? AND (sex IS NULL OR sex = 'Unknown')
+                ''', (gender, author_id))
+            
+            return author_id
     
     def link_book_authors(self, book_id, authors):
         """Link a book to its authors"""
@@ -561,10 +733,20 @@ if __name__ == "__main__":
         else:
             print("✓ Will append to existing database (skip duplicates).")
     
+    # Ask about gender lookup
+    print("\n" + "="*50)
+    gender_lookup = input("Would you like to look up author gender from Wikipedia? (yes/no): ").strip().lower()
+    lookup_gender = gender_lookup == 'yes'
+    
+    if lookup_gender:
+        print("✓ Gender lookup enabled (this will make processing slower)")
+    else:
+        print("✓ Gender lookup disabled")
+    
     library_path = input("\nEnter the path to your ebook library folder: ").strip()
     library_path = library_path.strip('"').strip("'")
     
-    catalog = EbookCatalog(db_path)
+    catalog = EbookCatalog(db_path, lookup_gender=lookup_gender)
     catalog.connect()
     catalog.create_tables()
     

@@ -1,6 +1,8 @@
 let allBooks = [];
 let currentFilter = 'all';
 let currentSort = 'title-asc';
+let maleAuthors = [];
+let femaleAuthors = [];
 
 async function loadBooks() {
     try {
@@ -9,6 +11,15 @@ async function loadBooks() {
         allBooks = data.books;
         displayBooks(allBooks);
         updateStats(data.stats);
+        
+        // Load gender data
+        const maleResponse = await fetch('/api/authors-by-gender/M');
+        const maleData = await maleResponse.json();
+        maleAuthors = maleData.map(a => a.author_name);
+        
+        const femaleResponse = await fetch('/api/authors-by-gender/F');
+        const femaleData = await femaleResponse.json();
+        femaleAuthors = femaleData.map(a => a.author_name);
     } catch (error) {
         document.getElementById('booksContainer').innerHTML = '<div class="no-results">Error loading books</div>';
     }
@@ -92,8 +103,23 @@ window.onclick = function(event) {
 
 function filterBooks(searchTerm, filterType) {
     let filtered = allBooks;
-    if (filterType === 'series') filtered = filtered.filter(book => book.series !== null);
-    else if (filterType === 'standalone') filtered = filtered.filter(book => book.series === null);
+    
+    // Apply filter type
+    if (filterType === 'series') {
+        filtered = filtered.filter(book => book.series !== null);
+    } else if (filterType === 'standalone') {
+        filtered = filtered.filter(book => book.series === null);
+    } else if (filterType === 'male') {
+        filtered = filtered.filter(book => 
+            maleAuthors.some(author => book.authors.includes(author))
+        );
+    } else if (filterType === 'female') {
+        filtered = filtered.filter(book => 
+            femaleAuthors.some(author => book.authors.includes(author))
+        );
+    }
+    
+    // Apply search term
     if (searchTerm) {
         const term = searchTerm.toLowerCase();
         filtered = filtered.filter(book => 
@@ -110,14 +136,35 @@ function updateStats(stats) {
     document.getElementById('totalBooksBadge').textContent = `📖 ${stats.total_books} Books`;
 }
 
-async function showAuthors() {
+async function showAuthors(genderFilter = null) {
     try {
         const response = await fetch('/api/authors-with-covers');
         const allAuthors = await response.json();
+        
+        // Filter by gender if specified
+        let filteredAuthors = allAuthors;
+        if (genderFilter === 'M') {
+            filteredAuthors = allAuthors.filter(author => maleAuthors.includes(author.name));
+        } else if (genderFilter === 'F') {
+            filteredAuthors = allAuthors.filter(author => femaleAuthors.includes(author.name));
+        }
+        
         document.getElementById('mainView').style.display = 'none';
         document.getElementById('listView').style.display = 'block';
-        document.getElementById('listTitle').textContent = 'All Authors';
-        document.getElementById('listContainer').innerHTML = allAuthors.map(author => `
+        
+        const genderLabel = genderFilter === 'M' ? ' (Male)' : genderFilter === 'F' ? ' (Female)' : '';
+        document.getElementById('listTitle').textContent = `All Authors${genderLabel}`;
+        
+        // Add filter buttons
+        const filterButtons = `
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="filter-btn ${!genderFilter ? 'active' : ''}" onclick="showAuthors()">All Authors</button>
+                <button class="filter-btn ${genderFilter === 'M' ? 'active' : ''}" onclick="showAuthors('M')">👨 Male</button>
+                <button class="filter-btn ${genderFilter === 'F' ? 'active' : ''}" onclick="showAuthors('F')">👩 Female</button>
+            </div>
+        `;
+        
+        document.getElementById('listContainer').innerHTML = filterButtons + filteredAuthors.map(author => `
             <div class="list-item" onclick="filterByAuthor('${author.name.replace(/'/g, "\\'")}')">
                 <div class="list-item-covers">
                     ${author.covers.slice(0, 4).map(cover => cover.has_cover ? `<img src="/api/cover/${cover.book_id}" class="list-item-cover-thumb">` : `<div class="list-item-cover-placeholder">📚</div>`).join('')}
@@ -131,14 +178,47 @@ async function showAuthors() {
     } catch (error) { console.error('Error loading authors:', error); }
 }
 
-async function showSeries() {
+async function showSeries(genderFilter = null) {
     try {
         const response = await fetch('/api/series-with-covers');
-        const allSeries = await response.json();
+        const allSeriesData = await response.json();
+        
+        // For series, we need to check if any author in the series matches the gender
+        let filteredSeries = allSeriesData;
+        if (genderFilter) {
+            const genderAuthorsList = genderFilter === 'M' ? maleAuthors : femaleAuthors;
+            filteredSeries = [];
+            
+            for (const series of allSeriesData) {
+                // Check books we already have loaded for this series
+                const seriesBooks = allBooks.filter(book => book.series && book.series.includes(series.name));
+                
+                const hasGenderAuthor = seriesBooks.some(book => 
+                    genderAuthorsList.some(author => book.authors.includes(author))
+                );
+                
+                if (hasGenderAuthor) {
+                    filteredSeries.push(series);
+                }
+            }
+        }
+        
         document.getElementById('mainView').style.display = 'none';
         document.getElementById('listView').style.display = 'block';
-        document.getElementById('listTitle').textContent = 'All Series';
-        document.getElementById('listContainer').innerHTML = allSeries.map(series => `
+        
+        const genderLabel = genderFilter === 'M' ? ' (Male Authors)' : genderFilter === 'F' ? ' (Female Authors)' : '';
+        document.getElementById('listTitle').textContent = `All Series${genderLabel}`;
+        
+        // Add filter buttons
+        const filterButtons = `
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="filter-btn ${!genderFilter ? 'active' : ''}" onclick="showSeries()">All Series</button>
+                <button class="filter-btn ${genderFilter === 'M' ? 'active' : ''}" onclick="showSeries('M')">👨 Male Authors</button>
+                <button class="filter-btn ${genderFilter === 'F' ? 'active' : ''}" onclick="showSeries('F')">👩 Female Authors</button>
+            </div>
+        `;
+        
+        document.getElementById('listContainer').innerHTML = filterButtons + filteredSeries.map(series => `
             <div class="list-item" onclick="filterBySeries('${series.name.replace(/'/g, "\\'")}')">
                 <div class="list-item-covers">
                     ${series.covers.slice(0, 4).map(cover => cover.has_cover ? `<img src="/api/cover/${cover.book_id}" class="list-item-cover-thumb">` : `<div class="list-item-cover-placeholder">📚</div>`).join('')}
@@ -174,6 +254,12 @@ function filterBySeries(seriesName) {
     showMainView();
     document.getElementById('searchInput').value = seriesName;
     filterBooks(seriesName, currentFilter);
+}
+
+function filterBySubject(subjectName) {
+    showMainView();
+    document.getElementById('searchInput').value = subjectName;
+    filterBooks(subjectName, currentFilter);
 }
 
 document.getElementById('searchInput').addEventListener('input', (e) => filterBooks(e.target.value, currentFilter));
