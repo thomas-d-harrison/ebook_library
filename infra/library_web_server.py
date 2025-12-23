@@ -141,6 +141,15 @@ def api_series_with_covers():
 @app.route('/api/subjects')
 def api_subjects():
     return jsonify(get_all_subjects_with_counts())
+    
+@app.route('/api/authors-by-gender/<gender>')
+def api_authors_by_gender(gender):
+    conn = sqlite3.connect(str(DB_PATH))
+    cursor = conn.cursor()
+    cursor.execute('SELECT author_name FROM authors WHERE sex = ? ORDER BY author_name', (gender,))
+    authors = [{'author_name': row[0]} for row in cursor.fetchall()]
+    conn.close()
+    return jsonify(authors)
 
 @app.route('/api/book/<int:book_id>')
 def api_book_details(book_id):

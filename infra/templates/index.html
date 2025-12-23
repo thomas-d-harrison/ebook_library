@@ -11,11 +11,11 @@
         <header>
             <div class="header-content">
                 <div class="header-ctas">
-                    <button class="header-cta-btn" onclick="showAuthors()">📚 Authors</button>
-                    <button class="header-cta-btn" onclick="showSeries()">📖 Series</button>
+                    <button class="header-cta-btn" onclick="showAuthors()">👤 Authors</button>
+                    <button class="header-cta-btn" onclick="showSeries()">📚 Series</button>
                 </div>
                 <div class="header-center">
-                    <h1>📚 TT's eLibrary 🌐</h1>
+                    <h1>📖 TT's eLibrary 🌐</h1>
                     <p class="subtitle">Browse and download the eBook collection</p>
                 </div>
                 <div class="header-right">
@@ -38,9 +38,12 @@
                     </select>
                 </div>
                 <div class="filters">
-                    <button class="filter-btn active" data-filter="all">All Books</button>
-                    <button class="filter-btn" data-filter="series">In Series</button>
-                    <button class="filter-btn" data-filter="standalone">Standalone</button>
+                    <button class="filter-btn active" data-filter="all">📚 All Books</button>
+                    <button class="filter-btn" data-filter="series">📘 In Series</button>
+                    <button class="filter-btn" data-filter="standalone">📙 Standalone</button>
+                    <div style="flex: 1;"></div>
+                    <button class="filter-btn" data-filter="male">⚣ Male Authors</button>
+                    <button class="filter-btn" data-filter="female">⚢ Female Authors</button>
                 </div>
             </div>
             <div id="booksContainer">
