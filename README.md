@@ -111,14 +111,14 @@ Data is stored in:
 erDiagram
     books {
       INT id PK
-      TEXT title
-      TEXT description
+      STR title
+      STR description
       DATE publication_date
     }
 
     authors {
       INT id PK
-      TEXT name
+      STR name
     }
 
     book_authors {
@@ -128,7 +128,7 @@ erDiagram
 
     series {
       INT id PK
-      TEXT name
+      STR name
     }
 
     book_series {
@@ -139,7 +139,7 @@ erDiagram
 
     subjects {
       INT id PK
-      TEXT name
+      STR name
     }
 
     book_subjects {
@@ -149,28 +149,28 @@ erDiagram
 
     content_warnings {
       INT id PK
-      TEXT name
+      STR name
     }
 
     book_files {
       INT id PK
       INT book_id FK
-      TEXT file_path
-      TEXT file_type
+      STR file_path
+      STR file_type
     }
 
     book_attributes {
       INT id PK
       INT book_id FK
-      TEXT key
-      TEXT value
+      STR key
+      STR value
     }
 
     reading_history {
       INT id PK
       INT book_id FK
       DATE date
-      TEXT status
+      STR status
       INT rating
     }
 
