@@ -246,6 +246,28 @@ class EbookCatalog:
             'Steve Berry': 'M',
             'Tash Aw': 'M',
             'George M. Johnson': 'M',
+            'Cormac McCarthy': 'M',
+            'Madeleine K. Albright': 'F',
+            'Sun Tzu': 'M',
+            'Xenobe Purvis':'F',
+            'Bryan Konietzko, Michael Dante DiMartino, Gene Luen Yang': 'M',
+            'Dylin Hardcastle': 'M',
+            'Gabriel Garcia Marques': 'M',
+            'Max Porter': 'M',
+            'Miranda Schreiber': 'F',
+            'Moshtari Hilal': 'F',
+            'Beukes Lauren': 'F',
+            'Chukwuebuka Ibeh': 'M',
+            'Gus Moreno': 'M',
+            'Jen Beagin': 'F',
+            'Lily King': 'F',
+            'Myriam Lacroix': 'F',
+            'SenLinYu': 'F',
+            'Tom Sweterlitsch': 'M',
+            'Vincenzo Latronico': 'M',
+            'Zora Neale Hurston': 'F',
+            'Hugh Fraser':'M',
+            'Fyodor Dostoyevsky':'M'
         }
         
         # Check cache first
