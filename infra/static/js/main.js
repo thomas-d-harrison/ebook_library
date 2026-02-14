@@ -81,7 +81,7 @@ async function showBookDetails(bookId) {
                     ${book.series ? `<div class="info-row"><div class="info-label">Series</div><div class="info-value">${book.series}</div></div>` : ''}
                     ${book.publisher ? `<div class="info-row"><div class="info-label">Publisher</div><div class="info-value">${book.publisher}</div></div>` : ''}
                     ${book.publish_date ? `<div class="info-row"><div class="info-label">Published</div><div class="info-value">${book.publish_date}</div></div>` : ''}
-                    ${book.isbn ? `<div class="info-row"><div class="info-label">ISBN</div><div class="info-value">${book.isbn}</div></div>` : ''}
+                    ${book.isbn ? `<div class="info-row"><div class="info-label">ISBN</div><div class="info-value"><a href="https://isbnsearch.org/isbn/${book.isbn}" target="_blank" rel="noopener noreferrer">${book.isbn}</a></div></div>` : ''}
                 </div>
             </div>
             ${book.subjects.length > 0 ? `<div class="info-row"><div class="info-label">Subjects</div><div class="book-subjects">${book.subjects.map(s => `<span class="subject-tag">${s}</span>`).join('')}</div></div>` : ''}
