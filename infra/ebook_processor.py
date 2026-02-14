@@ -28,7 +28,6 @@ class EbookCatalog:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT,
                 book_folder TEXT UNIQUE,
-                isbn TEXT,
                 publisher TEXT,
                 publish_date TEXT,
                 language TEXT,
@@ -68,6 +67,17 @@ class EbookCatalog:
                 file_format TEXT,
                 file_size INTEGER,
                 FOREIGN KEY (book_id) REFERENCES books (id)
+            )
+        ''')
+        
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS book_identifiers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                book_id INTEGER,
+                identifier_type TEXT NOT NULL,
+                identifier_value TEXT NOT NULL,
+                UNIQUE(book_id, identifier_type, identifier_value),
+                FOREIGN KEY (book_id) REFERENCES books (id) ON DELETE CASCADE
             )
         ''')
         
@@ -114,7 +124,7 @@ class EbookCatalog:
         metadata = {
             'title': None,
             'authors': [],
-            'isbn': None,
+            'identifiers': [],  # Changed from 'isbn' to 'identifiers' list
             'publisher': None,
             'publish_date': None,
             'language': None,
@@ -177,19 +187,41 @@ class EbookCatalog:
                     if desc_elem is not None:
                         metadata['description'] = desc_elem.text
                 
-                if metadata['isbn'] is None:
-                    isbn_elem = root.find(f'.//{prefix}identifier[@id="isbn"]', ns if prefix else {})
-                    if isbn_elem is None:
-                        isbn_elem = root.find(f'.//{prefix}identifier', ns if prefix else {})
-                    if isbn_elem is not None:
-                        metadata['isbn'] = isbn_elem.text
-                
                 # Extract all subject elements
                 if not metadata['subjects']:
                     subject_elems = root.findall(f'.//{prefix}subject', ns if prefix else {})
                     for subject_elem in subject_elems:
                         if subject_elem.text:
                             metadata['subjects'].append(subject_elem.text.strip())
+            
+            # Extract ALL identifiers (not just ISBN) - do this OUTSIDE the prefix loop
+            identifier_elems = root.findall('.//dc:identifier', ns)
+            if not identifier_elems:
+                identifier_elems = root.findall('.//identifier')
+            
+            for identifier_elem in identifier_elems:
+                if identifier_elem.text:
+                    identifier_value = identifier_elem.text.strip()
+                    # Get the scheme attribute (ISBN, GOOGLE, MOBI, etc.)
+                    identifier_type = identifier_elem.get('{http://www.idpf.org/2007/opf}scheme')
+                    if not identifier_type:
+                        identifier_type = identifier_elem.get('opf:scheme')
+                    if not identifier_type:
+                        # If no scheme, check the id attribute
+                        identifier_id = identifier_elem.get('id')
+                        if identifier_id:
+                            identifier_type = identifier_id.upper()
+                        else:
+                            # Default to UNKNOWN if we can't determine the type
+                            identifier_type = 'UNKNOWN'
+                    
+                    # Normalize the identifier type to uppercase
+                    identifier_type = identifier_type.upper()
+                    
+                    metadata['identifiers'].append({
+                        'type': identifier_type,
+                        'value': identifier_value
+                    })
             
             # Extract series information from meta tags (OUTSIDE the prefix loop)
             series_elem = root.find('.//meta[@name="calibre:series"]')
@@ -267,7 +299,11 @@ class EbookCatalog:
             'Vincenzo Latronico': 'M',
             'Zora Neale Hurston': 'F',
             'Hugh Fraser':'M',
-            'Fyodor Dostoyevsky':'M'
+            'Fyodor Dostoyevsky':'M',
+            'George R. R. Martin':'M',
+            'Timothy Ridge':'M',
+            'Sean Wolfe':'M',
+            'Ashley Bartlett':'F'
         }
         
         # Check cache first
@@ -477,6 +513,24 @@ class EbookCatalog:
                 VALUES (?, ?)
             ''', (book_id, subject_id))
     
+    def link_book_identifiers(self, book_id, identifiers):
+        """Link a book to its identifiers (ISBN, GOOGLE, MOBI, etc.)"""
+        for identifier in identifiers:
+            # Handle both dict format and potential legacy formats
+            if isinstance(identifier, dict):
+                identifier_type = identifier.get('type', 'UNKNOWN')
+                identifier_value = identifier.get('value', '')
+            else:
+                # Fallback for unexpected formats
+                identifier_type = 'UNKNOWN'
+                identifier_value = str(identifier)
+            
+            if identifier_value:  # Only insert if we have a value
+                self.cursor.execute('''
+                    INSERT OR IGNORE INTO book_identifiers (book_id, identifier_type, identifier_value)
+                    VALUES (?, ?, ?)
+                ''', (book_id, identifier_type, identifier_value))
+    
     def add_or_get_series(self, series_name):
         """Add a series to the series table or get its ID if it exists"""
         try:
@@ -538,7 +592,7 @@ class EbookCatalog:
                 book_name = book_folder.name
                 print(f"\nProcessing: {folder_author_name} / {book_name}")
                 
-                metadata = {'authors': [{'name': folder_author_name, 'sort': None}], 'title': book_name, 'subjects': []}
+                metadata = {'authors': [{'name': folder_author_name, 'sort': None}], 'title': book_name, 'subjects': [], 'identifiers': []}
                 opf_file = None
                 cover_file = None
                 book_files = []
@@ -557,13 +611,12 @@ class EbookCatalog:
                 
                 try:
                     self.cursor.execute('''
-                        INSERT INTO books (title, book_folder, isbn, publisher, 
+                        INSERT INTO books (title, book_folder, publisher, 
                                          publish_date, language, description, cover_path, metadata_path)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         metadata.get('title', book_name),
                         str(book_folder),
-                        metadata.get('isbn'),
                         metadata.get('publisher'),
                         metadata.get('publish_date'),
                         metadata.get('language'),
@@ -576,6 +629,9 @@ class EbookCatalog:
                     
                     if metadata.get('authors'):
                         self.link_book_authors(book_id, metadata['authors'])
+                    
+                    if metadata.get('identifiers'):
+                        self.link_book_identifiers(book_id, metadata['identifiers'])
                     
                     if metadata.get('subjects'):
                         self.link_book_subjects(book_id, metadata['subjects'])
@@ -662,7 +718,23 @@ class EbookCatalog:
         ''', (book_id,))
         series_info = self.cursor.fetchone()
         
-        return book, files, authors, subjects, series_info
+        self.cursor.execute('''
+            SELECT identifier_type, identifier_value
+            FROM book_identifiers
+            WHERE book_id = ?
+        ''', (book_id,))
+        identifiers = {row[0]: row[1] for row in self.cursor.fetchall()}
+        
+        return book, files, authors, subjects, series_info, identifiers
+    
+    def get_book_identifiers(self, book_id):
+        """Get all identifiers for a specific book"""
+        self.cursor.execute('''
+            SELECT identifier_type, identifier_value
+            FROM book_identifiers
+            WHERE book_id = ?
+        ''', (book_id,))
+        return {row[0]: row[1] for row in self.cursor.fetchall()}
     
     def get_all_authors(self):
         """Get all unique authors in the library"""

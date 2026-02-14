@@ -50,11 +50,13 @@ def get_book_details(book_id):
     subjects = [row[0] for row in cursor.fetchall()]
     cursor.execute('SELECT id, file_path, file_format FROM book_files WHERE book_id = ?', (book_id,))
     files = [{'id': row[0], 'path': row[1], 'format': row[2].replace('.', '')} for row in cursor.fetchall()]
+    cursor.execute('''SELECT identifier_value FROM book_identifiers WHERE identifier_type = 'ISBN' AND book_id = ? LIMIT 1''', (book_id,))
+    isbn = [row[0] for row in cursor.fetchall()]
     conn.close()
     return {
         'id': book_row[0], 'title': book_row[1], 'authors': ', '.join(authors) if authors else 'Unknown',
-        'isbn': book_row[3], 'publisher': book_row[4], 'publish_date': book_row[5],
-        'description': book_row[7], 'cover_path': book_row[8], 'series': series,
+        'isbn': isbn, 'publisher': book_row[3], 'publish_date': book_row[4],
+        'description': book_row[6], 'cover_path': book_row[8], 'series': series,
         'subjects': subjects, 'files': files
     }
 
