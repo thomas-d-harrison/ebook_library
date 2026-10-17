@@ -95,6 +95,7 @@ FROM reading_history
 WHERE read_count > 1
 ORDER BY read_count DESC;
 
+
 -- Content warnings summary
 SELECT 
     cw.warning_text,
@@ -103,6 +104,7 @@ FROM content_warnings cw
 WHERE cw.warning_text IS NOT NULL AND cw.warning_text != ''
 GROUP BY cw.warning_text
 ORDER BY book_count DESC;
+
 
 -- Books with strong character development
 SELECT 
@@ -118,8 +120,26 @@ WHERE ba.strong_character_dev = 'Yes'
 ORDER BY rh.star_rating DESC;
 
 
-select * from reading_history;
-select * from books;
-select * from book_attributes;
+-----everything
+SELECT 
+    b.title,
+    a.author_name,
+    s.series_name,
+    bser.series_index
+FROM books b
+LEFT JOIN book_authors ba ON b.id = ba.book_id
+LEFT JOIN authors a ON ba.author_id = a.id
+LEFT JOIN book_subjects bsub on bsub.book_id = b.id
+LEFT JOIN subjects sub on sub.id = bsub.subject_id
+LEFT JOIN book_series bser ON b.id = bser.book_id
+LEFT JOIN series s ON bser.series_id = s.id
+LEFT JOIN reading_history rh ON b.id = rh.book_id
+ORDER BY a.author_sort, s.series_name, bser.series_index;
 
-select * from tt_db_ebook_lib.information_schema.tables;
+
+
+--Books read in 2026
+select title, last_date_read 
+from reading_history
+where read_status = 'read'
+and last_date_read like '2026%';

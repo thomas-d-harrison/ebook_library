@@ -254,18 +254,35 @@ ORDER BY year DESC;
 
 -- Find books missing metadata
 SELECT 
-    b.id,
+    DISTINCT b.id,
     b.title,
-    CASE WHEN b.isbn IS NULL THEN 'Missing ISBN' ELSE '' END as isbn_status,
+    CASE WHEN asin.identifier_value IS NULL THEN 'Missing ID' ELSE '' END as id_status,
     CASE WHEN b.publisher IS NULL THEN 'Missing Publisher' ELSE '' END as publisher_status,
     CASE WHEN b.description IS NULL THEN 'Missing Description' ELSE '' END as desc_status,
     CASE WHEN b.cover_path IS NULL THEN 'Missing Cover' ELSE '' END as cover_status
 FROM books b
+LEFT JOIN book_identifiers isbn ON b.id = isbn.book_id AND isbn.identifier_type = 'ISBN'
+LEFT JOIN book_identifiers asin ON b.id = asin.book_id AND asin.identifier_type = 'ASIN'
 WHERE 
-    b.isbn IS NULL 
-    OR b.publisher IS NULL 
-    OR b.description IS NULL 
-    OR b.cover_path IS NULL;
+    isbn.identifier_value IS NULL
+    AND (asin.identifier_value IS NULL 
+        OR b.publisher IS NULL 
+        OR b.description IS NULL 
+        OR b.cover_path IS NULL);
+
+--FIND MISSING PUBLSIHING DATE
+select * 
+from books 
+where publish_date is null;	
+
+--FIND PUBLISHER DUPES
+select publisher 
+from books
+group by publisher;
+
+select * from book_identifiers;
+
+select * from books;
 
 -- Find duplicate books (same title and author)
 SELECT 
@@ -300,3 +317,27 @@ join series s on s.id = bs.series_id
 where s.series_name = 'Sun Eater';
 
 SELECT id, series_name FROM series ORDER BY series_name
+
+select * from book_identifiers bi join books b on b.id = bi.book_id where identifier_type = 'ISBN' and b.id = '222';
+
+---author count
+select sex, count(author_name) as count_of_authors from authors group by sex;
+
+--book by author count
+select a.sex, count(b.id) as count_of_books
+from authors a
+join book_authors ba on a.id = ba.author_id
+join books b on b.id = ba.book_id
+group by a.sex;
+
+
+select author_name from authors where sex = 'Unknown';
+
+update authors set sex = 'F' where author_name = 'C. S. Pacat';
+
+select * from books where title like 'Trust';
+
+--START ANALYSIS ON TAGS
+select *
+from subjects
+group by subject_name;
